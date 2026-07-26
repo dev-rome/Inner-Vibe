@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { login } from "../actions";
+import { GoogleButton } from "@/components/auth/google-button";
 
 export default async function LoginPage({
   searchParams,
@@ -42,6 +43,12 @@ export default async function LoginPage({
           Log in
         </button>
       </form>
+
+      <div className="flex items-center gap-3 text-xs text-gray-500">
+        <span className="h-px flex-1 bg-gray-200" />
+      </div>
+
+      <GoogleButton />
 
       <p className="text-center text-sm">
         No account?{" "}
