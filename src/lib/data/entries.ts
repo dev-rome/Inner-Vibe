@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { CreateEntryInput } from "@/lib/validation/entry";
 import type { Tag } from "@/lib/data/tags";
+import { failRead, failWrite } from "@/lib/data/errors";
 
 // Domain shape, not the database row. The Supabase client knows nothing about
 // the Drizzle schema and returns raw columns, so toEntry is the seam.
@@ -39,7 +40,7 @@ export async function getEntries(): Promise<Entry[]> {
     .order("logged_at", { ascending: false });
 
   if (error) {
-    throw new Error(`Failed to fetch entries: ${error.message}`);
+    failRead("entries", error);
   }
 
   return ((data ?? []) as unknown as EntryRow[]).map(toEntry);
@@ -68,7 +69,7 @@ export async function createEntry(input: CreateEntryInput): Promise<string> {
   });
 
   if (error) {
-    throw new Error(`Failed to create entry: ${error.message}`);
+    failWrite("create entry", error);
   }
 
   return data as string;

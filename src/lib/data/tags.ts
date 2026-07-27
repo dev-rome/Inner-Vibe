@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { failRead } from "@/lib/data/errors";
 
 // What the UI needs, not the database row. user_id collapses to isCustom.
 export type Tag = {
@@ -24,7 +25,7 @@ export async function getTags(): Promise<Tag[]> {
     .order("name", { ascending: true });
 
   if (error) {
-    throw new Error(`Failed to fetch tags: ${error.message}`);
+    failRead("tags", error);
   }
 
   return (data ?? []).map(toTag);

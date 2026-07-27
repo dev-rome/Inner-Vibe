@@ -2,8 +2,11 @@
 
 import { z } from "zod";
 import { refresh } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createEntry } from "@/lib/data/entries";
+import { SessionExpiredError } from "@/lib/data/errors";
+import { AUTH_ERROR_CODES } from "@/lib/auth-errors";
 import {
   parseCreateEntryForm,
   type EntryFieldErrors,
@@ -39,13 +42,26 @@ export async function createEntryAction(
     return failure("Check the highlighted fields and try again.", fieldErrors);
   }
 
+  // Flagged rather than redirected inside the catch: redirect() signals by
+  // throwing, so calling it in there would be caught by this same block and
+  // reported as a generic save failure.
+  let sessionExpired = false;
+
   try {
     await createEntry(parsed.data);
   } catch (error) {
-    // Log the cause, return something generic: database errors carry column
-    // names, constraint names and row contents.
-    console.error("createEntryAction failed", error);
-    return failure("Something went wrong saving that. Please try again.");
+    if (error instanceof SessionExpiredError) {
+      sessionExpired = true;
+    } else {
+      // Log the cause, return something generic: database errors carry column
+      // names, constraint names and row contents.
+      console.error("createEntryAction failed", error);
+      return failure("Something went wrong saving that. Please try again.");
+    }
+  }
+
+  if (sessionExpired) {
+    redirect(`/login?error=${AUTH_ERROR_CODES.sessionExpired}`);
   }
 
   // refresh(), not revalidatePath(): these reads are cookie-dependent and were
