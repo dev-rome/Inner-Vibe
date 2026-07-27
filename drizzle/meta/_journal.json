@@ -36,6 +36,20 @@
       "when": 1785184509259,
       "tag": "0004_grant_api_access",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785185725502,
+      "tag": "0005_flimsy_serpent_society",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785185749855,
+      "tag": "0006_create_entry_rpc",
+      "breakpoints": true
     }
   ]
 }

@@ -2,7 +2,7 @@ import {
   pgTable,
   uuid,
   varchar,
-  integer,
+  numeric,
   boolean,
   timestamp,
   smallint,
@@ -24,7 +24,15 @@ export const entries = pgTable(
 
     note: varchar("note", { length: 1000 }),
 
-    sleepHours: integer("sleep_hours"),
+    // numeric, not integer: people report sleep in half hours ("7.5"), and an
+    // integer column silently rounds that away. precision 3 / scale 1 covers
+    // 0.0-24.0 exactly. mode: "number" so Drizzle types it as a JS number
+    // rather than the string it uses for arbitrary-precision numerics.
+    sleepHours: numeric("sleep_hours", {
+      precision: 3,
+      scale: 1,
+      mode: "number",
+    }),
     exercised: boolean("exercised"),
 
     loggedAt: timestamp("logged_at", { withTimezone: true })
@@ -48,14 +56,13 @@ export const tags = pgTable(
   "tags",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id"), // nullable on purpose: NULL = system tag
+    userId: uuid("user_id"),
     name: varchar("name", { length: 40 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (table) => [
-    // A user can't create the same custom tag name twice.
     uniqueIndex("tags_user_name_unique").on(table.userId, table.name),
     // Only one system tag (user_id NULL) per name — the (user_id, name) index
     // above won't catch this because Postgres treats NULLs as distinct.
