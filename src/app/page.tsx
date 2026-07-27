@@ -1,65 +1,67 @@
-import Image from "next/image";
+import Link from "next/link";
+import { buttonClasses } from "@/components/ui/button";
+
+const POINTS = [
+  {
+    title: "Private by default",
+    body: "Your entries are yours. Isolation is enforced by the database itself, not by application code that a future bug could get wrong.",
+  },
+  {
+    title: "Seconds to log",
+    body: "Pick how you feel. Add a note, your sleep, whether you moved, a tag or two. Everything past the first tap is optional.",
+  },
+  {
+    title: "Patterns, not verdicts",
+    body: "InnerVibe reflects your own data back to you. It is not a clinical tool, it does not diagnose, and it will never tell you what your feelings mean.",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex w-full max-w-3xl flex-1 flex-col items-center justify-between bg-white px-16 py-32 sm:items-start dark:bg-black">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl leading-10 font-semibold tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex flex-1 flex-col">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-16 sm:py-24">
+        <p className="text-subtle text-sm font-medium">InnerVibe</p>
+
+        <h1 className="mt-3 max-w-2xl text-3xl">
+          Notice how you feel, over time.
+        </h1>
+
+        <p className="text-muted mt-4 max-w-xl text-lg">
+          A private mood journal. Log a moment in seconds, then look back and
+          see what the pattern actually was, rather than what you remember it
+          being.
+        </p>
+
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          {/* Anchors, not buttons: these navigate. buttonClasses keeps the
+              look shared without pretending a link is a control. */}
+          <Link href="/signup" className={buttonClasses("primary")}>
+            Start journalling
+          </Link>
+          <Link href="/login" className={buttonClasses("secondary")}>
+            Log in
+          </Link>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="bg-foreground text-background flex h-12 w-full items-center justify-center gap-2 rounded-full px-5 transition-colors hover:bg-[#383838] md:w-[158px] dark:hover:bg-[#ccc]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] md:w-[158px] dark:border-white/[.145] dark:hover:bg-[#1a1a1a]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        <ul className="mt-16 grid gap-6 sm:mt-24 sm:grid-cols-3">
+          {POINTS.map((point) => (
+            <li
+              key={point.title}
+              className="border-line bg-surface-raised rounded-lg border p-4 sm:p-6"
+            >
+              <h2 className="text-ink text-base font-medium">{point.title}</h2>
+              <p className="text-muted mt-2 text-sm">{point.body}</p>
+            </li>
+          ))}
+        </ul>
       </main>
+
+      <footer className="border-line mt-16 border-t">
+        <p className="text-subtle mx-auto w-full max-w-3xl px-6 py-6 text-xs">
+          InnerVibe is a personal journal, not a medical service. If you are
+          struggling, please talk to someone you trust or a health professional.
+        </p>
+      </footer>
     </div>
   );
 }
