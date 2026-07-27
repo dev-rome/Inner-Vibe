@@ -15,6 +15,13 @@
       "when": 1785122931963,
       "tag": "0001_clever_robin_chapel",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785123484270,
+      "tag": "0002_tricky_thunderball",
+      "breakpoints": true
     }
   ]
 }

@@ -48,16 +48,20 @@ export const tags = pgTable(
   "tags",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id"),
+    userId: uuid("user_id"), // nullable on purpose: NULL = system tag
     name: varchar("name", { length: 40 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (table) => [
-    // A user can't create the same tag name twice.
-    // NULLs (system tags) are handled by a separate concern, see note below.
+    // A user can't create the same custom tag name twice.
     uniqueIndex("tags_user_name_unique").on(table.userId, table.name),
+    // Only one system tag (user_id NULL) per name — the (user_id, name) index
+    // above won't catch this because Postgres treats NULLs as distinct.
+    uniqueIndex("tags_system_name_unique")
+      .on(table.name)
+      .where(sql`${table.userId} IS NULL`),
   ],
 );
 

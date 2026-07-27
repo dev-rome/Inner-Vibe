@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "tags_system_name_unique" ON "tags" USING btree ("name") WHERE "tags"."user_id" IS NULL;
