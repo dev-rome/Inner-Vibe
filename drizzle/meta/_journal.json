@@ -8,6 +8,13 @@
       "when": 1785078455258,
       "tag": "0000_cooing_namorita",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785122931963,
+      "tag": "0001_clever_robin_chapel",
+      "breakpoints": true
     }
   ]
 }
