@@ -9,8 +9,16 @@ type TagPickerProps = {
   tags: Tag[];
 };
 
-const chipBase =
-  "ease-standard inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors duration-150";
+// One chip treatment for every tag, existing or pending, so a selected chip
+// looks and behaves the same whatever it is underneath.
+const chipClasses = [
+  "ease-standard inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors duration-150",
+  "border-line bg-surface-raised text-ink",
+  "hover:border-line-strong",
+  "peer-checked:border-line-strong peer-checked:bg-surface-sunken peer-checked:font-medium",
+  "peer-checked:before:mr-1 peer-checked:before:content-['✓']",
+  "peer-focus-visible:outline-focus peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2",
+].join(" ");
 
 /**
  * Existing tags are uncontrolled checkboxes so selection still works with
@@ -86,40 +94,31 @@ export function TagPicker({ tags }: TagPickerProps) {
              * rather than the accent. The glyph also means selection is not
              * signalled by colour alone.
              */}
-            <span
-              className={[
-                chipBase,
-                "border-line bg-surface-raised text-ink",
-                "hover:border-line-strong",
-                "peer-checked:border-line-strong peer-checked:bg-surface-sunken peer-checked:font-medium",
-                "peer-checked:before:mr-1 peer-checked:before:content-['✓']",
-                "peer-focus-visible:outline-focus peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2",
-              ].join(" ")}
-            >
-              {tag.name}
-            </span>
+            <span className={chipClasses}>{tag.name}</span>
           </label>
         ))}
 
+        {/*
+         * Pending new tags render as checked checkboxes, identical to the tags
+         * above. They used to be hidden inputs with their own × button, which
+         * put a remove control on one selected chip and not the others for no
+         * reason a user could see. Unticking discards the name, which is the
+         * same gesture as deselecting anything else here.
+         */}
         {newNames.map((name) => (
-          <span
-            key={name}
-            className={`${chipBase} border-line-strong bg-surface-sunken text-ink font-medium`}
-          >
-            <input type="hidden" name="newTagNames" value={name} />
-            <span aria-hidden="true">&#10003;</span>
-            {name}
-            {/* size-6 is 24px, the WCAG 2.5.8 minimum target. The negative
-                margin keeps the chip from growing to accommodate it. */}
-            <button
-              type="button"
-              onClick={() => removeNewTag(name)}
-              aria-label={`Remove ${name}`}
-              className="text-muted hover:bg-line hover:text-ink ease-standard -mr-1.5 inline-flex size-6 items-center justify-center rounded-full transition-colors duration-150"
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </span>
+          <label key={name} className="cursor-pointer">
+            <input
+              type="checkbox"
+              name="newTagNames"
+              value={name}
+              defaultChecked
+              onChange={(event) => {
+                if (!event.target.checked) removeNewTag(name);
+              }}
+              className="peer sr-only"
+            />
+            <span className={chipClasses}>{name}</span>
+          </label>
         ))}
       </div>
 

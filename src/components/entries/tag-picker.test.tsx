@@ -103,15 +103,61 @@ describe("TagPicker", () => {
     expect(submittedValues(container, "newTagNames")).toEqual(["baking"]);
   });
 
-  it("removes a pending tag", async () => {
+  // A pending tag is a checked checkbox like every other selected tag, not a
+  // chip with its own remove button. Unticking discards it.
+  it("discards a pending tag when it is unticked", async () => {
     const user = userEvent.setup();
     const { container } = render(<TagPicker tags={TAGS} />);
 
     await user.type(screen.getByLabelText(/add a new tag/i), "baking");
     await user.click(screen.getByRole("button", { name: "Add" }));
-    await user.click(screen.getByRole("button", { name: "Remove baking" }));
+
+    const pending = screen.getByRole("checkbox", { name: "baking" });
+    expect(pending).toBeChecked();
+
+    await user.click(pending);
 
     expect(submittedValues(container, "newTagNames")).toEqual([]);
+    expect(
+      screen.queryByRole("checkbox", { name: "baking" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("offers no remove button now that unticking does the job", async () => {
+    const user = userEvent.setup();
+    render(<TagPicker tags={TAGS} />);
+
+    await user.type(screen.getByLabelText(/add a new tag/i), "baking");
+    await user.click(screen.getByRole("button", { name: "Add" }));
+
+    expect(
+      screen.queryByRole("button", { name: /remove/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  /*
+   * The regression this guards: pending tags used to be hidden inputs inside a
+   * differently-styled chip, so one selected tag carried a remove control and
+   * the rest did not. Asserting the rendered chip is byte-identical is the
+   * point here, since "looks the same" is the actual requirement.
+   */
+  it("renders a pending tag identically to an existing one", async () => {
+    const user = userEvent.setup();
+    render(<TagPicker tags={TAGS} />);
+
+    await user.type(screen.getByLabelText(/add a new tag/i), "baking");
+    await user.click(screen.getByRole("button", { name: "Add" }));
+
+    const existing = screen.getByRole("checkbox", { name: "work" });
+    const pending = screen.getByRole("checkbox", { name: "baking" });
+
+    expect(pending.className).toBe(existing.className);
+    expect(pending.nextElementSibling?.className).toBe(
+      existing.nextElementSibling?.className,
+    );
+    expect(pending.parentElement?.className).toBe(
+      existing.parentElement?.className,
+    );
   });
 
   // Enter here must add the tag, not submit the half-written entry.
