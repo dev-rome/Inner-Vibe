@@ -1,22 +1,30 @@
 import { signInWithGoogle } from "@/app/(auth)/actions";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 export function GoogleButton() {
   return (
     <form action={signInWithGoogle}>
-      <button
-        type="submit"
-        className="flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-50"
+      <SubmitButton
+        variant="secondary"
+        pendingLabel="Redirecting…"
+        className="w-full"
       >
         <GoogleIcon />
         Continue with Google
-      </button>
+      </SubmitButton>
     </form>
   );
 }
 
+// Sized in em rather than px so the mark tracks the button's text if the
+// reader scales their font up.
 function GoogleIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-[1.15em] w-[1.15em]"
+    >
       <path
         fill="#4285F4"
         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.76h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z"
