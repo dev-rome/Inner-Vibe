@@ -4,6 +4,7 @@ import { getTags } from "@/lib/data/tags";
 import { EntryForm } from "@/components/entries/entry-form";
 import { EntryList } from "@/components/entries/entry-list";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { Card } from "@/components/ui/card";
 
 export default async function Dashboard() {
   const [tags, entries] = await Promise.all([getTags(), getEntries()]);
@@ -15,17 +16,17 @@ export default async function Dashboard() {
         <form action={signout}>
           <SubmitButton
             variant="secondary"
+            size="sm"
             pendingLabel="Logging out…"
-            className="px-3 py-1.5 text-sm"
           >
             Log out
           </SubmitButton>
         </form>
       </header>
 
-      <div className="border-line bg-surface-raised mt-8 rounded-lg border p-4 sm:p-6">
+      <Card className="mt-8">
         <EntryForm tags={tags} />
-      </div>
+      </Card>
 
       <section className="mt-12">
         <h2 className="text-xl">Your entries</h2>

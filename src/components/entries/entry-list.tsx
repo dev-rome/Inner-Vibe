@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import type { Entry } from "@/lib/data/entries";
 import { moodForRating } from "@/lib/moods";
+import { Card, EmptyState } from "@/components/ui/card";
+import { Tag } from "@/components/ui/tag";
 
 // Formats in the server's timezone, so a late entry can show as tomorrow.
 // See docs/decisions.md, Known limitations.
@@ -15,12 +17,12 @@ const dateFormat = new Intl.DateTimeFormat("en-GB", {
 export function EntryList({ entries }: { entries: Entry[] }) {
   if (entries.length === 0) {
     return (
-      <div className="border-line-strong bg-surface-raised rounded-lg border border-dashed px-6 py-10 text-center">
+      <EmptyState>
         <p className="text-ink">No entries yet.</p>
         <p className="text-muted mt-1 text-sm">
           Log how you are feeling above. One entry is enough to start.
         </p>
-      </div>
+      </EmptyState>
     );
   }
 
@@ -37,7 +39,7 @@ function EntryCard({ entry }: { entry: Entry }) {
   const mood = moodForRating(entry.rating);
 
   return (
-    <li className="border-line bg-surface-raised rounded-lg border p-4 sm:p-6">
+    <Card as="li">
       <div className="flex items-start gap-3">
         <span className="text-2xl leading-none" aria-hidden="true">
           {mood?.emoji}
@@ -66,18 +68,15 @@ function EntryCard({ entry }: { entry: Entry }) {
           {entry.tags.length > 0 && (
             <ul className="mt-3 flex flex-wrap gap-1.5">
               {entry.tags.map((tag) => (
-                <li
-                  key={tag.id}
-                  className="border-line text-subtle rounded-full border px-2.5 py-0.5 text-xs"
-                >
-                  {tag.name}
+                <li key={tag.id}>
+                  <Tag>{tag.name}</Tag>
                 </li>
               ))}
             </ul>
           )}
         </div>
       </div>
-    </li>
+    </Card>
   );
 }
 

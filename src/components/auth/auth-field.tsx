@@ -1,3 +1,5 @@
+import { Input } from "@/components/ui/input";
+
 type AuthFieldProps = {
   id: string;
   name: string;
@@ -45,7 +47,7 @@ export function AuthField({
         </p>
       )}
 
-      <input
+      <Input
         id={id}
         name={name}
         type={type}
@@ -55,7 +57,7 @@ export function AuthField({
         defaultValue={defaultValue}
         aria-invalid={hasError || undefined}
         aria-describedby={describedBy}
-        className="border-field bg-surface-raised text-ink mt-1.5 w-full rounded-sm border px-3 py-2"
+        className="mt-1.5 w-full"
       />
 
       {hasError && (

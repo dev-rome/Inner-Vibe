@@ -3,22 +3,13 @@
 import { useRef, useState } from "react";
 import type { Tag } from "@/lib/data/tags";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { TagCheckbox } from "@/components/ui/tag";
 import { MAX_TAG_NAME_LENGTH } from "@/lib/validation/entry";
 
 type TagPickerProps = {
   tags: Tag[];
 };
-
-// One chip treatment for every tag, existing or pending, so a selected chip
-// looks and behaves the same whatever it is underneath.
-const chipClasses = [
-  "ease-standard inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors duration-150",
-  "border-line bg-surface-raised text-ink",
-  "hover:border-line-strong",
-  "peer-checked:border-line-strong peer-checked:bg-surface-sunken peer-checked:font-medium",
-  "peer-checked:before:mr-1 peer-checked:before:content-['✓']",
-  "peer-focus-visible:outline-focus peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2",
-].join(" ");
 
 /**
  * Existing tags are uncontrolled checkboxes so selection still works with
@@ -81,44 +72,31 @@ export function TagPicker({ tags }: TagPickerProps) {
 
       <div ref={listRef} className="mt-3 flex flex-wrap gap-2">
         {tags.map((tag) => (
-          <label key={tag.id} className="cursor-pointer">
-            <input
-              type="checkbox"
-              name="tagIds"
-              value={tag.id}
-              className="peer sr-only"
-            />
-            {/*
-             * Neutral selected state. Tags are not on the coral allowlist, so
-             * selection is carried by fill, border weight and a check glyph
-             * rather than the accent. The glyph also means selection is not
-             * signalled by colour alone.
-             */}
-            <span className={chipClasses}>{tag.name}</span>
-          </label>
+          <TagCheckbox
+            key={tag.id}
+            name="tagIds"
+            value={tag.id}
+            label={tag.name}
+          />
         ))}
 
         {/*
-         * Pending new tags render as checked checkboxes, identical to the tags
-         * above. They used to be hidden inputs with their own × button, which
-         * put a remove control on one selected chip and not the others for no
-         * reason a user could see. Unticking discards the name, which is the
-         * same gesture as deselecting anything else here.
+         * Pending new tags are the same control, checked. They used to be
+         * hidden inputs in their own chip with a × button, which put a remove
+         * control on one selected chip and not the others for no reason a user
+         * could see. Unticking discards the name.
          */}
         {newNames.map((name) => (
-          <label key={name} className="cursor-pointer">
-            <input
-              type="checkbox"
-              name="newTagNames"
-              value={name}
-              defaultChecked
-              onChange={(event) => {
-                if (!event.target.checked) removeNewTag(name);
-              }}
-              className="peer sr-only"
-            />
-            <span className={chipClasses}>{name}</span>
-          </label>
+          <TagCheckbox
+            key={name}
+            name="newTagNames"
+            value={name}
+            label={name}
+            defaultChecked
+            onChange={(event) => {
+              if (!event.target.checked) removeNewTag(name);
+            }}
+          />
         ))}
       </div>
 
@@ -126,7 +104,7 @@ export function TagPicker({ tags }: TagPickerProps) {
         <label htmlFor="new-tag" className="sr-only">
           Add a new tag
         </label>
-        <input
+        <Input
           id="new-tag"
           type="text"
           value={draft}
@@ -140,15 +118,15 @@ export function TagPicker({ tags }: TagPickerProps) {
               addTag();
             }
           }}
-          className="border-field bg-surface-raised text-ink placeholder:text-subtle min-w-0 flex-1 rounded-sm border px-3 py-2 text-sm"
+          className="min-w-0 flex-1 text-sm"
         />
         {/* aria-disabled, not disabled, so the control stays in the tab order
             and remains discoverable. addTag already no-ops on an empty name. */}
         <Button
           variant="secondary"
+          size="sm"
           onClick={addTag}
           aria-disabled={draft.trim() === "" || undefined}
-          className="px-4 py-2 text-sm"
         >
           Add
         </Button>

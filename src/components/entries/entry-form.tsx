@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { createEntryAction } from "@/app/dashboard/actions";
 import { initialEntryFormState } from "@/app/dashboard/form-state";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { Input, Textarea } from "@/components/ui/input";
 import { MoodSelector } from "./mood-selector";
 import { TagPicker } from "./tag-picker";
 import type { Tag } from "@/lib/data/tags";
@@ -75,7 +76,7 @@ export function EntryForm({ tags }: EntryFormProps) {
               <label htmlFor="sleepHours" className="text-muted block text-sm">
                 Hours slept
               </label>
-              <input
+              <Input
                 id="sleepHours"
                 name="sleepHours"
                 type="number"
@@ -90,7 +91,7 @@ export function EntryForm({ tags }: EntryFormProps) {
                 aria-invalid={
                   Boolean(state.fieldErrors.sleepHours) || undefined
                 }
-                className="border-field bg-surface-raised text-ink placeholder:text-subtle mt-1.5 w-28 rounded-sm border px-3 py-2 font-mono tabular-nums"
+                className="mt-1.5 w-28 font-mono tabular-nums"
               />
             </div>
 
@@ -160,7 +161,7 @@ function NoteField({ error }: { error?: string[] }) {
       </label>
       <p className="text-muted mt-1 text-sm">Optional. Just for you.</p>
 
-      <textarea
+      <Textarea
         id="note"
         name="note"
         rows={4}
@@ -168,7 +169,7 @@ function NoteField({ error }: { error?: string[] }) {
         onChange={(event) => setLength(event.target.value.length)}
         aria-describedby={error ? "note-error" : undefined}
         aria-invalid={Boolean(error) || undefined}
-        className="border-field bg-surface-raised text-ink placeholder:text-subtle mt-3 w-full resize-y rounded-sm border px-3 py-2 text-lg"
+        className="mt-3 w-full text-lg"
       />
 
       {/* maxLength stops typing dead, which reads as a broken keyboard without

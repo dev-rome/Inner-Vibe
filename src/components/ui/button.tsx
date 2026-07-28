@@ -1,17 +1,28 @@
 import type { ComponentProps, ReactNode } from "react";
 
 export type ButtonVariant = "primary" | "secondary";
+export type ButtonSize = "sm" | "md";
 
 const base = [
   "ease-standard inline-flex items-center justify-center gap-2",
   "rounded-md border font-medium transition-colors duration-150",
-  // Padding in rem via the spacing scale, so the control grows with the
-  // reader's font size instead of trapping larger text in a fixed box.
-  "px-5 py-2.5",
-  // aria-disabled rather than :disabled, see SubmitButton for why.
+  // aria-disabled rather than :disabled, see SubmitButton for why. Both are
+  // styled because a genuinely inert control still uses the native attribute.
   "aria-disabled:cursor-not-allowed aria-disabled:opacity-60",
   "disabled:cursor-not-allowed disabled:opacity-60",
 ].join(" ");
+
+/**
+ * Padding in rem via the spacing scale, so a control grows with the reader's
+ * font size instead of trapping larger text in a fixed box.
+ *
+ * `sm` matches the input padding rather than being a uniform step down, so a
+ * button sitting beside a field lines up with it.
+ */
+const sizes: Record<ButtonSize, string> = {
+  sm: "px-3 py-2 text-sm",
+  md: "px-5 py-2.5",
+};
 
 const variants: Record<ButtonVariant, string> = {
   // Pressed darkens the border rather than the fill: accent-pressed carries
@@ -27,16 +38,21 @@ const variants: Record<ButtonVariant, string> = {
   ].join(" "),
 };
 
-export function buttonClasses(variant: ButtonVariant = "primary") {
-  return `${base} ${variants[variant]}`;
+export function buttonClasses(
+  variant: ButtonVariant = "primary",
+  size: ButtonSize = "md",
+) {
+  return `${base} ${sizes[size]} ${variants[variant]}`;
 }
 
 type ButtonProps = ComponentProps<"button"> & {
   variant?: ButtonVariant;
+  size?: ButtonSize;
 };
 
 export function Button({
   variant = "primary",
+  size = "md",
   className = "",
   type = "button",
   ...props
@@ -44,7 +60,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={`${buttonClasses(variant)} ${className}`}
+      className={`${buttonClasses(variant, size)} ${className}`}
       {...props}
     />
   );

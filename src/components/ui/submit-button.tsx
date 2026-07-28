@@ -2,12 +2,18 @@
 
 import type { ReactNode } from "react";
 import { useFormStatus } from "react-dom";
-import { ButtonLabel, buttonClasses, type ButtonVariant } from "./button";
+import {
+  ButtonLabel,
+  buttonClasses,
+  type ButtonSize,
+  type ButtonVariant,
+} from "./button";
 
 type SubmitButtonProps = {
   children: ReactNode;
   pendingLabel: string;
   variant?: ButtonVariant;
+  size?: ButtonSize;
   className?: string;
 };
 
@@ -28,6 +34,7 @@ export function SubmitButton({
   children,
   pendingLabel,
   variant = "primary",
+  size = "md",
   className = "",
 }: SubmitButtonProps) {
   const { pending } = useFormStatus();
@@ -40,7 +47,7 @@ export function SubmitButton({
       onClick={(event) => {
         if (pending) event.preventDefault();
       }}
-      className={`${buttonClasses(variant)} ${className}`}
+      className={`${buttonClasses(variant, size)} ${className}`}
     >
       <ButtonLabel pending={pending} pendingLabel={pendingLabel}>
         {children}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const POINTS = [
   {
@@ -45,13 +46,10 @@ export default function Home() {
 
         <ul className="mt-16 grid gap-6 sm:mt-24 sm:grid-cols-3">
           {POINTS.map((point) => (
-            <li
-              key={point.title}
-              className="border-line bg-surface-raised rounded-lg border p-4 sm:p-6"
-            >
+            <Card as="li" key={point.title}>
               <h2 className="text-ink text-base font-medium">{point.title}</h2>
               <p className="text-muted mt-2 text-sm">{point.body}</p>
-            </li>
+            </Card>
           ))}
         </ul>
       </main>

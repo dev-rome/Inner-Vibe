@@ -13,33 +13,47 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 /*
- * globals.css resolves --font-sans through --font-inter, which next/font
- * normally defines on <html> in the root layout. Storybook has no layout, so
- * without this the variables are undefined and every story silently falls back
- * to a system font, making type review worthless.
+ * The font variables go on <html>, matching what the root layout does in the
+ * app. A decorator wrapping the story is not good enough, and the reason is
+ * subtle enough to be worth writing down.
  *
- * Same for the page background: components are built to sit on --color-surface,
- * so a default white canvas would misrepresent every border and contrast pair.
+ * globals.css declares --font-sans as `var(--font-inter), ...` inside @theme,
+ * which Tailwind emits at :root. Custom properties are substituted where they
+ * are *declared*, not where they are used. With --font-inter defined on a
+ * nested div, :root resolves var(--font-inter) against nothing, so --font-sans
+ * becomes guaranteed-invalid — and that empty value then inherits everywhere,
+ * even into elements that can see --font-inter perfectly well.
+ *
+ * The symptom is quiet: every story falls back to the system font while
+ * looking close enough to pass a glance, which makes type review worthless.
  */
-const withDesignSystem: Decorator = (Story) => (
-  <div
-    className={`${inter.variable} ${instrumentSans.variable} ${jetbrainsMono.variable} bg-surface text-ink font-sans`}
-  >
-    <div className="p-6">
-      <Story />
-    </div>
+if (typeof document !== "undefined") {
+  document.documentElement.classList.add(
+    inter.variable,
+    instrumentSans.variable,
+    jetbrainsMono.variable,
+  );
+}
+
+/*
+ * Components are built to sit on --color-surface, so a default white canvas
+ * would misrepresent every border and contrast pair in the system.
+ */
+const withCanvas: Decorator = (Story) => (
+  <div className="bg-surface text-ink font-sans p-6">
+    <Story />
   </div>
 );
 
 const preview: Preview = {
-  decorators: [withDesignSystem],
+  decorators: [withCanvas],
   parameters: {
     layout: "fullscreen",
     controls: { expanded: true },
     a11y: {
       // "error" fails the run rather than only annotating the panel, so a
-      // contrast or naming regression is a hard signal, not a note someone
-      // has to remember to read.
+      // contrast or naming regression is a hard signal. Takes effect once
+      // stories run as tests via addon-vitest; today it is panel-only.
       test: "error",
     },
     backgrounds: { disable: true },
