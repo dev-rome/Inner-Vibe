@@ -25,10 +25,9 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // Refreshes the auth token if it's expired. Must run on every request.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Called for the side effect: it refreshes an expired token and writes the
+  // new cookies through setAll above. The result is deliberately unused.
+  await supabase.auth.getUser();
 
   return supabaseResponse;
 }
