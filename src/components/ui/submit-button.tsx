@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ComponentProps } from "react";
 import { useFormStatus } from "react-dom";
 import {
   ButtonLabel,
@@ -9,26 +9,21 @@ import {
   type ButtonVariant,
 } from "./button";
 
-type SubmitButtonProps = {
-  children: ReactNode;
+type SubmitButtonProps = Omit<ComponentProps<"button">, "type"> & {
+  /** Shown and announced while the enclosing form is in flight. */
   pendingLabel: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
-  className?: string;
 };
 
 /**
- * Submit button that wires its own loading state.
+ * Reads pending from useFormStatus, so it works for any `<form action>`
+ * without the parent threading a prop down.
  *
- * useFormStatus reads the pending state of the nearest enclosing form, so this
- * works for any `<form action={...}>` without the parent threading a prop
- * down, and it keeps working when the parent has no useActionState at all
- * (logout, Google sign-in).
- *
- * aria-disabled rather than disabled: a disabled button leaves the tab order,
- * so a keyboard or screen reader user who just pressed it loses their place
- * and hears nothing about why. This stays focusable and announced as busy;
- * the click guard is what actually prevents the second submit.
+ * Pending sets aria-disabled, not disabled: a disabled button leaves the tab
+ * order, so a keyboard user who just pressed it loses focus and hears nothing.
+ * The click guard is what blocks a second submit. Native `disabled` still
+ * works for a genuinely inert button.
  */
 export function SubmitButton({
   children,
@@ -36,6 +31,8 @@ export function SubmitButton({
   variant = "primary",
   size = "md",
   className = "",
+  onClick,
+  ...props
 }: SubmitButtonProps) {
   const { pending } = useFormStatus();
 
@@ -45,9 +42,14 @@ export function SubmitButton({
       aria-disabled={pending || undefined}
       aria-busy={pending || undefined}
       onClick={(event) => {
-        if (pending) event.preventDefault();
+        if (pending) {
+          event.preventDefault();
+          return;
+        }
+        onClick?.(event);
       }}
       className={`${buttonClasses(variant, size)} ${className}`}
+      {...props}
     >
       <ButtonLabel pending={pending} pendingLabel={pendingLabel}>
         {children}

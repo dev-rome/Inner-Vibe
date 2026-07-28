@@ -19,13 +19,7 @@ export function MoodSelector({ name, errorId, hasError }: MoodSelectorProps) {
 
       <div className="mt-3 grid grid-cols-6 gap-1.5 sm:gap-2">
         {MOOD_OPTIONS.map((option) => (
-          <MoodTile
-            key={option.value}
-            name={name}
-            value={option.value}
-            emoji={option.emoji}
-            label={option.label}
-          />
+          <MoodTile key={option.value} name={name} {...option} />
         ))}
       </div>
 

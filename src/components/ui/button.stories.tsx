@@ -38,20 +38,12 @@ export const Small: Story = {
   args: { size: "sm", children: "Add" },
 };
 
-/**
- * aria-disabled, not disabled. A disabled button leaves the tab order, so a
- * keyboard user who just pressed it loses focus to the document body with no
- * explanation. This stays focusable and announced.
- */
+/** aria-disabled, so the button stays focusable and announced. */
 export const Disabled: Story = {
   args: { "aria-disabled": true },
 };
 
-/**
- * What SubmitButton renders while its form is in flight. Shown here with the
- * label forced, because useFormStatus only reports pending during a real
- * submission and a story has no server to wait on.
- */
+/** Forced, since useFormStatus needs a real submission. See SubmitButton. */
 export const Loading: Story = {
   args: { "aria-disabled": true, "aria-busy": true },
   render: (args) => (
@@ -63,22 +55,14 @@ export const Loading: Story = {
   ),
 };
 
-/**
- * The full grid, which is the point of building primitives in isolation: you
- * review the set against a checklist instead of discovering a missing state
- * when a page happens to need it.
- *
- * Hover and active are absent because they cannot be forced from a story
- * without a pseudo-state addon. Hover the live examples above.
- */
+/** Hover and active are absent: they need a pseudo-state addon to force. */
 export const AllStates: Story = {
   parameters: { controls: { disable: true } },
   render: () => (
     <table className="text-ink border-separate border-spacing-4 text-sm">
       <thead>
         <tr className="text-subtle text-left text-xs">
-          {/* The corner of a matrix labels nothing, so it is a td. An empty
-              th is an axe violation, and the a11y panel caught it here. */}
+          {/* A matrix corner labels nothing, so td. An empty th fails axe. */}
           <td />
           <th scope="col">Default</th>
           <th scope="col">Disabled</th>

@@ -16,10 +16,7 @@ export const WithValue: Story = {
   args: { defaultValue: "work" },
 };
 
-/**
- * Numeric fields add `font-mono tabular-nums`. Tabular figures stop a column
- * of hours jittering as digit widths change.
- */
+/** Tabular figures stop a column of hours jittering as digit widths change. */
 export const Numeric: Story = {
   args: {
     type: "number",
@@ -28,11 +25,7 @@ export const Numeric: Story = {
   },
 };
 
-/**
- * The border turns red, not just the message. Red text alone leaves the field
- * looking untouched, so nothing visually ties the error to the input it
- * belongs to. aria-invalid is the half a screen reader announces.
- */
+/** The border turns red too, tying the message to the field it belongs to. */
 export const Invalid: Story = {
   args: {
     "aria-invalid": true,
@@ -67,13 +60,7 @@ export const AsTextarea: Story = {
   ),
 };
 
-/**
- * Every field state in one frame.
- *
- * Each is wrapped in a real label because an input with no accessible name is
- * an axe violation, and a states overview should not require ignoring a panel
- * full of them to review the thing you came to look at.
- */
+/** Labelled, because an unlabelled input is an axe violation. */
 export const AllStates: Story = {
   parameters: { controls: { disable: true } },
   render: () => (

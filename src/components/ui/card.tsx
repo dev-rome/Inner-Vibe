@@ -1,17 +1,10 @@
 import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
 
-/**
- * Surface and shape only. Border colour and padding live on the variants
- * below, because the two treatments disagree on both and merging them would
- * leave callers with conflicting utilities.
- */
+// Border colour and padding live on the variants, which disagree on both.
 const cardBase = "bg-surface-raised rounded-lg border";
 
-// ComponentPropsWithoutRef, not ComponentProps: a div ref and an li ref are
-// not interchangeable, so including ref makes the element union unassignable.
-// Nothing here needs a ref, and leaving it out keeps the union honest.
+// WithoutRef, because a div ref and an li ref are not interchangeable.
 type CardProps = ComponentPropsWithoutRef<"div"> & {
-  /** Entry lists and the landing page render cards as list items. */
   as?: "div" | "li" | "section";
 };
 
@@ -26,10 +19,7 @@ export function Card({ as = "div", className = "", ...props }: CardProps) {
   );
 }
 
-/**
- * The nothing-here-yet state. A dashed border reads as a placeholder rather
- * than as content, which a solid card would not.
- */
+// Dashed, so it reads as a placeholder rather than as content.
 export function EmptyState({
   children,
   className = "",

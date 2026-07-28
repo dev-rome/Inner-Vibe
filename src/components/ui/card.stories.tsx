@@ -22,10 +22,7 @@ export const Default: Story = {
   ),
 };
 
-/**
- * A dashed border reads as a placeholder rather than as content, which is the
- * whole job of an empty state. A solid card would look like something loaded.
- */
+/** Dashed, so it reads as a placeholder rather than as loaded content. */
 export const Empty: Story = {
   render: () => (
     <EmptyState className="max-w-md">
@@ -37,10 +34,7 @@ export const Empty: Story = {
   ),
 };
 
-/**
- * Cards render as list items where the content is a list, so the markup stays
- * semantic instead of becoming a pile of divs with list styling.
- */
+/** As list items, so list content keeps its semantics. */
 export const AsListItems: Story = {
   render: () => (
     <ul className="grid max-w-2xl gap-4 sm:grid-cols-2">
@@ -56,11 +50,7 @@ export const AsListItems: Story = {
   ),
 };
 
-/**
- * Padding is p-4 on mobile and sm:p-6 from the small breakpoint up. Resize the
- * viewport to see it change; this is the one card property that is responsive,
- * so it is worth checking here rather than discovering it on a phone.
- */
+/** The one responsive card property: p-4 below sm, p-6 above. */
 export const Responsive: Story = {
   render: () => (
     <Card className="max-w-md">
@@ -71,11 +61,7 @@ export const Responsive: Story = {
   ),
 };
 
-/**
- * Shadow is not the default and mostly should not be used. Definition comes
- * from the border; shadow is for something genuinely floating over the page,
- * like a modal or a dropdown. Two stacked shadows on a flat surface is a bug.
- */
+/** Definition comes from the border. Shadow is for modals and dropdowns. */
 export const Elevation: Story = {
   parameters: { controls: { disable: true } },
   render: () => (
@@ -96,7 +82,7 @@ export const Elevation: Story = {
   ),
 };
 
-/** A realistic composition, to check the primitives sit together correctly. */
+/** A realistic composition, to check the primitives sit together. */
 export const WithContent: Story = {
   render: () => (
     <Card as="li" className="max-w-md list-none">

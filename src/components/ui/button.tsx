@@ -6,28 +6,20 @@ export type ButtonSize = "sm" | "md";
 const base = [
   "ease-standard inline-flex items-center justify-center gap-2",
   "rounded-md border font-medium transition-colors duration-150",
-  // aria-disabled rather than :disabled, see SubmitButton for why. Both are
-  // styled because a genuinely inert control still uses the native attribute.
   "aria-disabled:cursor-not-allowed aria-disabled:opacity-60",
   "disabled:cursor-not-allowed disabled:opacity-60",
 ].join(" ");
 
-/**
- * Padding in rem via the spacing scale, so a control grows with the reader's
- * font size instead of trapping larger text in a fixed box.
- *
- * `sm` matches the input padding rather than being a uniform step down, so a
- * button sitting beside a field lines up with it.
- */
+// sm matches input padding so a button beside a field lines up.
 const sizes: Record<ButtonSize, string> = {
   sm: "px-3 py-2 text-sm",
   md: "px-5 py-2.5",
 };
 
 const variants: Record<ButtonVariant, string> = {
-  // Pressed darkens the border rather than the fill: accent-pressed carries
-  // ink at 4.39:1, just under AA, so it never sits behind text. The border is
-  // always present and transparent, so colouring it causes no layout shift.
+  // Pressed darkens the border, not the fill: accent-pressed carries ink at
+  // 4.39:1, so it never sits behind text. The border is always there and
+  // transparent, so colouring it shifts nothing.
   primary: [
     "border-transparent bg-accent text-accent-ink",
     "hover:bg-accent-hover active:border-accent-pressed",
@@ -66,13 +58,8 @@ export function Button({
   );
 }
 
-/**
- * A spinner sized in em so it matches whatever text sits next to it.
- *
- * The global reduced-motion rule caps animation-iteration-count at 1, so this
- * settles instead of flickering. The pending label carries the meaning either
- * way; the spinner is decoration and is hidden from assistive tech.
- */
+// Sized in em to track adjacent text. The global reduced-motion rule caps
+// iterations at 1, so it settles rather than flickering.
 export function Spinner() {
   return (
     <svg
