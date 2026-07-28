@@ -11,19 +11,29 @@ import {
   parseCreateEntryForm,
   type EntryFieldErrors,
 } from "@/lib/validation/entry";
-import type { EntryFormState } from "./form-state";
+import {
+  emptySubmission,
+  readSubmission,
+  type EntryFormState,
+  type EntrySubmission,
+} from "./form-state";
 
 function failure(
   message: string,
+  values: EntrySubmission,
   fieldErrors: EntryFieldErrors = {},
 ): EntryFormState {
-  return { status: "error", message, fieldErrors, savedAt: null };
+  return { status: "error", message, fieldErrors, savedAt: null, values };
 }
 
 export async function createEntryAction(
   _previousState: EntryFormState,
   formData: FormData,
 ): Promise<EntryFormState> {
+  // Read before anything can fail, so every error path can hand the values
+  // back and the form can restore itself.
+  const values = readSubmission(formData);
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -32,14 +42,21 @@ export async function createEntryAction(
   // Not a duplicate of the dashboard layout's guard. A Server Action is a POST
   // endpoint against this route, reachable without ever rendering the page.
   if (!user) {
-    return failure("Your session has expired. Log in again to save this.");
+    return failure(
+      "Your session has expired. Log in again to save this.",
+      values,
+    );
   }
 
   const parsed = parseCreateEntryForm(formData);
 
   if (!parsed.success) {
     const { fieldErrors } = z.flattenError(parsed.error);
-    return failure("Check the highlighted fields and try again.", fieldErrors);
+    return failure(
+      "Check the highlighted fields and try again.",
+      values,
+      fieldErrors,
+    );
   }
 
   // Flagged rather than redirected inside the catch: redirect() signals by
@@ -56,7 +73,10 @@ export async function createEntryAction(
       // Log the cause, return something generic: database errors carry column
       // names, constraint names and row contents.
       console.error("createEntryAction failed", error);
-      return failure("Something went wrong saving that. Please try again.");
+      return failure(
+        "Something went wrong saving that. Please try again.",
+        values,
+      );
     }
   }
 
@@ -73,5 +93,6 @@ export async function createEntryAction(
     message: "Entry saved.",
     fieldErrors: {},
     savedAt: Date.now(),
+    values: emptySubmission,
   };
 }

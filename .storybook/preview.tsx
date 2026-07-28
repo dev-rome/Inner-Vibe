@@ -40,7 +40,7 @@ if (typeof document !== "undefined") {
  * would misrepresent every border and contrast pair in the system.
  */
 const withCanvas: Decorator = (Story) => (
-  <div className="bg-surface text-ink font-sans p-6">
+  <div className="bg-surface text-ink p-6 font-sans">
     <Story />
   </div>
 );

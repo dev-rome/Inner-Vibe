@@ -9,6 +9,9 @@ import { MAX_TAG_NAME_LENGTH } from "@/lib/validation/entry";
 
 type TagPickerProps = {
   tags: Tag[];
+  /** Echoed back after a rejected save, so the picker restores itself. */
+  selectedIds?: string[];
+  pendingNames?: string[];
 };
 
 /**
@@ -19,8 +22,12 @@ type TagPickerProps = {
  * New tags are held as pending names and created by the same transaction as
  * the entry, so abandoning the form leaves no orphan tags behind.
  */
-export function TagPicker({ tags }: TagPickerProps) {
-  const [newNames, setNewNames] = useState<string[]>([]);
+export function TagPicker({
+  tags,
+  selectedIds = [],
+  pendingNames = [],
+}: TagPickerProps) {
+  const [newNames, setNewNames] = useState<string[]>(pendingNames);
   const [draft, setDraft] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -77,6 +84,7 @@ export function TagPicker({ tags }: TagPickerProps) {
             name="tagIds"
             value={tag.id}
             label={tag.name}
+            defaultChecked={selectedIds.includes(tag.id)}
           />
         ))}
 

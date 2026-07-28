@@ -5,9 +5,16 @@ type MoodSelectorProps = {
   name: string;
   errorId?: string;
   hasError?: boolean;
+  /** Rating as submitted, so a rejected save can restore the choice. */
+  defaultValue?: string;
 };
 
-export function MoodSelector({ name, errorId, hasError }: MoodSelectorProps) {
+export function MoodSelector({
+  name,
+  errorId,
+  hasError,
+  defaultValue,
+}: MoodSelectorProps) {
   return (
     <fieldset
       aria-describedby={hasError ? errorId : undefined}
@@ -19,7 +26,12 @@ export function MoodSelector({ name, errorId, hasError }: MoodSelectorProps) {
 
       <div className="mt-3 grid grid-cols-6 gap-1.5 sm:gap-2">
         {MOOD_OPTIONS.map((option) => (
-          <MoodTile key={option.value} name={name} {...option} />
+          <MoodTile
+            key={option.value}
+            name={name}
+            defaultChecked={String(option.value) === defaultValue}
+            {...option}
+          />
         ))}
       </div>
 

@@ -13,26 +13,33 @@ const meta = {
   title: "Primitives/SubmitButton",
   component: SubmitButton,
   args: { children: "Save entry", pendingLabel: "Saving…" },
-  decorators: [
-    (Story) => (
-      <form action={neverResolves}>
-        <Story />
-      </form>
-    ),
-  ],
 } satisfies Meta<typeof SubmitButton>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+// Applied per story, never on meta. Decorators compose rather than replace, so
+// a form on meta would nest inside any story that supplies its own — invalid
+// HTML that React only warns about at runtime.
+const inForm: Story["decorators"] = [
+  (Story) => (
+    <form action={neverResolves}>
+      <Story />
+    </form>
+  ),
+];
 
-export const Secondary: Story = { args: { variant: "secondary" } };
+export const Default: Story = { decorators: inForm };
 
-export const Small: Story = { args: { size: "sm" } };
+export const Secondary: Story = {
+  args: { variant: "secondary" },
+  decorators: inForm,
+};
+
+export const Small: Story = { args: { size: "sm" }, decorators: inForm };
 
 /** Native disabled, correct for a genuinely inert button. */
-export const Disabled: Story = { args: { disabled: true } };
+export const Disabled: Story = { args: { disabled: true }, decorators: inForm };
 
 /** Auth forms use a full-width submit. */
 export const FullWidth: Story = {
@@ -51,10 +58,12 @@ export const LongPendingLabel: Story = {
     children: "Create account",
     pendingLabel: "Creating your account, this can take a moment…",
   },
+  decorators: inForm,
 };
 
 /** The real pending state, driven by a live submission rather than a prop. */
 export const PendingOnSubmit: Story = {
+  decorators: inForm,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = canvas.getByRole("button");
@@ -73,6 +82,7 @@ export const PendingOnSubmit: Story = {
 
 /** Enter on a focused submit posts the form, same as a click. */
 export const KeyboardSubmit: Story = {
+  decorators: inForm,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = canvas.getByRole("button");
@@ -89,7 +99,6 @@ export const KeyboardSubmit: Story = {
 
 export const AllStates: Story = {
   parameters: { controls: { disable: true } },
-  decorators: [],
   render: () => (
     <table className="text-ink border-separate border-spacing-4 text-sm">
       <thead>

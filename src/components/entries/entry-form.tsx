@@ -57,13 +57,17 @@ export function EntryForm({ tags }: EntryFormProps) {
 
       <form key={formKey} action={formAction} className="flex flex-col gap-8">
         <MoodSelector
+          defaultValue={state.values.rating}
           name="rating"
           errorId="rating-error"
           hasError={Boolean(state.fieldErrors.rating)}
         />
         <FieldError id="rating-error" messages={state.fieldErrors.rating} />
 
-        <NoteField error={state.fieldErrors.note} />
+        <NoteField
+          error={state.fieldErrors.note}
+          defaultValue={state.values.note}
+        />
 
         <fieldset>
           <legend className="text-ink text-base font-medium">
@@ -85,6 +89,7 @@ export function EntryForm({ tags }: EntryFormProps) {
                 min="0"
                 max={MAX_SLEEP_HOURS}
                 placeholder="7.5"
+                defaultValue={state.values.sleepHours}
                 aria-describedby={
                   state.fieldErrors.sleepHours ? "sleep-error" : undefined
                 }
@@ -110,6 +115,7 @@ export function EntryForm({ tags }: EntryFormProps) {
                       type="radio"
                       name="exercised"
                       value={choice.value}
+                      defaultChecked={state.values.exercised === choice.value}
                       className="peer sr-only"
                     />
                     <span
@@ -135,7 +141,11 @@ export function EntryForm({ tags }: EntryFormProps) {
           />
         </fieldset>
 
-        <TagPicker tags={tags} />
+        <TagPicker
+          tags={tags}
+          selectedIds={state.values.tagIds}
+          pendingNames={state.values.newTagNames}
+        />
         <FieldError
           id="new-tag-error"
           messages={state.fieldErrors.newTagNames}
@@ -150,8 +160,14 @@ export function EntryForm({ tags }: EntryFormProps) {
 }
 
 // Separate component so the character count resets with the keyed form.
-function NoteField({ error }: { error?: string[] }) {
-  const [length, setLength] = useState(0);
+function NoteField({
+  error,
+  defaultValue,
+}: {
+  error?: string[];
+  defaultValue: string;
+}) {
+  const [length, setLength] = useState(defaultValue.length);
   const nearLimit = length > MAX_NOTE_LENGTH * 0.8;
 
   return (
@@ -166,6 +182,7 @@ function NoteField({ error }: { error?: string[] }) {
         name="note"
         rows={4}
         maxLength={MAX_NOTE_LENGTH}
+        defaultValue={defaultValue}
         onChange={(event) => setLength(event.target.value.length)}
         aria-describedby={error ? "note-error" : undefined}
         aria-invalid={Boolean(error) || undefined}

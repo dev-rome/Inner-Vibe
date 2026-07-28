@@ -85,34 +85,37 @@ export const Elevation: Story = {
 /** A realistic composition, to check the primitives sit together. */
 export const WithContent: Story = {
   render: () => (
-    <Card as="li" className="max-w-md list-none">
-      <div className="flex items-start gap-3">
-        <span className="text-2xl leading-none" aria-hidden="true">
-          {"\u{1F60A}"}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-            <p className="text-ink font-medium">Good</p>
-            <time className="text-subtle font-mono text-xs tabular-nums">
-              Mon 27 Jul, 18:52
-            </time>
+    // A bare <li> is an axe violation, and an entry card is always in a list.
+    <ul className="max-w-md">
+      <Card as="li">
+        <div className="flex items-start gap-3">
+          <span className="text-2xl leading-none" aria-hidden="true">
+            {"\u{1F60A}"}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+              <p className="text-ink font-medium">Good</p>
+              <time className="text-subtle font-mono text-xs tabular-nums">
+                Mon 27 Jul, 18:52
+              </time>
+            </div>
+            <p className="text-ink mt-2 text-lg">
+              Slept well and got out for a walk.
+            </p>
+            <p className="text-subtle mt-2 text-xs">
+              <span className="font-mono tabular-nums">7.5</span>h sleep ·
+              Exercised
+            </p>
+            <ul className="mt-3 flex flex-wrap gap-1.5">
+              {["exercise", "reading"].map((name) => (
+                <li key={name}>
+                  <Tag>{name}</Tag>
+                </li>
+              ))}
+            </ul>
           </div>
-          <p className="text-ink mt-2 text-lg">
-            Slept well and got out for a walk.
-          </p>
-          <p className="text-subtle mt-2 text-xs">
-            <span className="font-mono tabular-nums">7.5</span>h sleep ·
-            Exercised
-          </p>
-          <ul className="mt-3 flex flex-wrap gap-1.5">
-            {["exercise", "reading"].map((name) => (
-              <li key={name}>
-                <Tag>{name}</Tag>
-              </li>
-            ))}
-          </ul>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </ul>
   ),
 };
