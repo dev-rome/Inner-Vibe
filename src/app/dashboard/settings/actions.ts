@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getUser } from "@/lib/data/session";
 import { saveTimeZone } from "@/lib/data/profile";
 import { SessionExpiredError } from "@/lib/data/errors";
 import { AUTH_ERROR_CODES } from "@/lib/auth-errors";
@@ -15,10 +15,7 @@ export async function saveTimeZoneAction(
 ): Promise<SettingsFormState> {
   const timeZone = String(formData.get("timeZone") ?? "");
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   if (!user) {
     return { status: "error", message: "Your session has expired." };

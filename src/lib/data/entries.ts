@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireUser, requireUserForWrite } from "@/lib/data/session";
 import type { CreateEntryInput } from "@/lib/validation/entry";
 import type { Tag } from "@/lib/data/tags";
 import { failRead, failWrite } from "@/lib/data/errors";
@@ -34,6 +35,7 @@ export const entrySelect =
 
 // No user filter: RLS decides the rows, including the embedded tags.
 export async function getEntries(limit?: number): Promise<Entry[]> {
+  await requireUser();
   const supabase = await createClient();
 
   let query = supabase
@@ -65,6 +67,7 @@ export async function getEntries(limit?: number): Promise<Entry[]> {
  * Takes already-validated input; parsing FormData is the Server Action's job.
  */
 export async function createEntry(input: CreateEntryInput): Promise<string> {
+  await requireUserForWrite();
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc("create_entry", {
@@ -93,6 +96,7 @@ export async function updateEntry(
   id: string,
   input: CreateEntryInput,
 ): Promise<void> {
+  await requireUserForWrite();
   const supabase = await createClient();
 
   const { error } = await supabase.rpc("update_entry", {
@@ -117,6 +121,7 @@ export async function updateEntry(
  * caller's own rows, so a forged id simply matches nothing.
  */
 export async function deleteEntry(id: string): Promise<void> {
+  await requireUserForWrite();
   const supabase = await createClient();
 
   const { error } = await supabase.from("entries").delete().eq("id", id);

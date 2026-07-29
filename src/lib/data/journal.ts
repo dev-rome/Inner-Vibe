@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/data/session";
 import { failRead } from "@/lib/data/errors";
 import { endOfDay, startOfDay } from "@/lib/time-zone";
 import { type Entry, entrySelect, toEntry, type EntryRow } from "./entries";
@@ -48,6 +49,7 @@ export async function getJournalPage(
   cursor: Cursor | null,
   timeZone: string,
 ): Promise<JournalPage> {
+  await requireUser();
   const supabase = await createClient();
 
   // The `match` embed exists only to filter. Filtering the display embed
@@ -112,6 +114,7 @@ export async function getJournalPage(
 
 /** A single entry, or null when it does not exist or is not yours. */
 export async function getEntry(id: string): Promise<Entry | null> {
+  await requireUser();
   const supabase = await createClient();
 
   const { data, error } = await supabase

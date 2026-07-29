@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { requireUser, requireUserForWrite } from "@/lib/data/session";
 import { failRead, failWrite } from "@/lib/data/errors";
 import { DEFAULT_TIME_ZONE, isValidTimeZone } from "@/lib/time-zone";
 
@@ -16,6 +17,7 @@ import { DEFAULT_TIME_ZONE, isValidTimeZone } from "@/lib/time-zone";
  * each need the zone and none of them should pay for its own round trip.
  */
 export const getTimeZone = cache(async function getTimeZone(): Promise<string> {
+  await requireUser();
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -36,6 +38,7 @@ export async function saveTimeZone(
   userId: string,
   timeZone: string,
 ): Promise<void> {
+  await requireUserForWrite();
   const supabase = await createClient();
 
   // Upsert because the row may not exist yet. user_id is supplied explicitly

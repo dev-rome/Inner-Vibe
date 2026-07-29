@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/data/session";
 import { failRead } from "@/lib/data/errors";
 
 // What the UI needs, not the database row. user_id collapses to isCustom.
@@ -17,6 +18,7 @@ type TagRow = {
 // No user filter: the RLS SELECT policy returns the shared system tags plus
 // the caller's own, so this query answers differently per user.
 export async function getTags(): Promise<Tag[]> {
+  await requireUser();
   const supabase = await createClient();
 
   const { data, error } = await supabase

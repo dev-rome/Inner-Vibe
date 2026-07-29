@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getUser } from "@/lib/data/session";
 import { createEntry } from "@/lib/data/entries";
 import { SessionExpiredError } from "@/lib/data/errors";
 import { AUTH_ERROR_CODES } from "@/lib/auth-errors";
@@ -34,13 +34,10 @@ export async function createEntryAction(
   // back and the form can restore itself.
   const values = readSubmission(formData);
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   // Not a duplicate of the dashboard layout's guard. A Server Action is a POST
   // endpoint against this route, reachable without ever rendering the page.
+  const user = await getUser();
+
   if (!user) {
     return failure(
       "Your session has expired. Log in again to save this.",

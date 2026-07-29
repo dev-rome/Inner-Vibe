@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/data/session";
 import { failRead } from "@/lib/data/errors";
 import { bucketFor, type Range, type RangeWindow } from "@/lib/insights-range";
 
@@ -70,6 +71,7 @@ export async function getMoodOverTime(
   window: RangeWindow,
   timeZone: string,
 ): Promise<TrendPoint[]> {
+  await requireUser();
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc("mood_over_time", {
@@ -99,6 +101,7 @@ export async function getMoodOverTime(
 export async function getMoodByExercise(
   window: RangeWindow,
 ): Promise<ExerciseComparison[]> {
+  await requireUser();
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc("mood_by_exercise", {
@@ -109,7 +112,11 @@ export async function getMoodByExercise(
   if (error) failRead("mood by exercise", error);
 
   return (data ?? []).map(
-    (row: { exercised: boolean; avg_rating: unknown; entry_count: unknown }) => ({
+    (row: {
+      exercised: boolean;
+      avg_rating: unknown;
+      entry_count: unknown;
+    }) => ({
       exercised: row.exercised,
       average: toNumber(row.avg_rating as number | string | null),
       count: toNumber(row.entry_count as number | string | null),
@@ -120,6 +127,7 @@ export async function getMoodByExercise(
 export async function getMoodBySleep(
   window: RangeWindow,
 ): Promise<SleepComparison[]> {
+  await requireUser();
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc("mood_by_sleep", {
@@ -142,6 +150,7 @@ export async function getMoodByDay(
   window: RangeWindow,
   timeZone: string,
 ): Promise<DayMood[]> {
+  await requireUser();
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc("mood_by_day", {
@@ -170,6 +179,7 @@ export async function getMoodByDay(
 export async function getInsightsSummary(
   timeZone: string,
 ): Promise<InsightsSummary> {
+  await requireUser();
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc("insights_summary", {
@@ -180,7 +190,11 @@ export async function getInsightsSummary(
 
   // A setof function returns an array even when it yields one row.
   const row = (data ?? [])[0] as
-    | { total_entries: unknown; recent_entries: unknown; first_logged: string | null }
+    | {
+        total_entries: unknown;
+        recent_entries: unknown;
+        first_logged: string | null;
+      }
     | undefined;
 
   return {

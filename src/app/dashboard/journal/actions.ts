@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getUser } from "@/lib/data/session";
 import { deleteEntry, updateEntry } from "@/lib/data/entries";
 import { SessionExpiredError } from "@/lib/data/errors";
 import { AUTH_ERROR_CODES } from "@/lib/auth-errors";
@@ -12,14 +12,6 @@ import {
   readSubmission,
   type EntryFormState,
 } from "@/app/dashboard/form-state";
-
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
-}
 
 export async function updateEntryAction(
   id: string,
@@ -37,7 +29,7 @@ export async function updateEntryAction(
   });
 
   // A Server Action is a POST endpoint; the page guard is not a boundary.
-  if (!(await requireUser())) {
+  if (!(await getUser())) {
     return fail("Your session has expired. Log in again to save this.");
   }
 
@@ -87,7 +79,7 @@ export async function updateEntryAction(
  * not re-confirm: a POST that reaches here is the confirmation.
  */
 export async function deleteEntryAction(id: string): Promise<void> {
-  if (!(await requireUser())) {
+  if (!(await getUser())) {
     redirect(`/login?error=${AUTH_ERROR_CODES.sessionExpired}`);
   }
 
