@@ -128,17 +128,30 @@ export function EntryForm({
               />
             </div>
 
-            {/* Yes/No rather than a checkbox: unanswered has to stay null, and
-                a checkbox would record every skipped question as "no".
-                Neutral selected state — this is not on the coral allowlist. */}
+            {/*
+              Radios rather than a checkbox: unanswered has to stay null, and a
+              checkbox would record every skipped question as "no".
+
+              "Not recorded" is a real option because a radio cannot be
+              deselected. Without it, answering once — even by mistake — is
+              permanent, which the edit flow makes worse. It carries the empty
+              string, which parseCreateEntryForm already reads as null, and
+              matches the wording the detail view uses.
+
+              Neutral selected state; this is not on the coral allowlist.
+            */}
             <fieldset>
               <legend className="text-muted text-sm">Exercised?</legend>
               <div className="mt-1.5 flex gap-2">
                 {[
+                  { value: "", label: "Not recorded" },
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                 ].map((choice) => (
-                  <label key={choice.value} className="cursor-pointer">
+                  <label
+                    key={choice.value || "unrecorded"}
+                    className="cursor-pointer"
+                  >
                     <input
                       type="radio"
                       name="exercised"

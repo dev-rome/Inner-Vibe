@@ -159,6 +159,16 @@ describe("parseCreateEntryForm", () => {
     expect(no.success && no.data.exercised).toBe(false);
   });
 
+  /*
+   * The "Not recorded" radio carries an empty string, so the form now always
+   * sends the field rather than omitting it. That is a different input from
+   * absence and has to reach the same null.
+   */
+  it("reads an explicit empty exercise value as unanswered", () => {
+    const explicit = parseCreateEntryForm(formWith({ exercised: "" }));
+    expect(explicit.success && explicit.data.exercised).toBeNull();
+  });
+
   it("reports a missing rating instead of coercing it", () => {
     const formData = new FormData();
     expect(fieldErrors(formData).rating).toEqual([

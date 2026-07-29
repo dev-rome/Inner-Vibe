@@ -147,3 +147,42 @@ export const KeepsInputOnFailure: Story = {
     await expect(canvas.getByRole("radio", { name: "Good" })).toBeChecked();
   },
 };
+
+/**
+ * A radio cannot be deselected, so without a third option answering once was
+ * permanent. This walks the round trip the form previously could not express.
+ */
+export const ExerciseCanReturnToUnrecorded: Story = {
+  args: {
+    initialValues: { ...emptySubmission, rating: "5", exercised: "yes" },
+    clearOnSuccess: false,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const unrecorded = canvas.getByRole("radio", { name: "Not recorded" });
+    const yes = canvas.getByRole("radio", { name: "Yes" });
+
+    await expect(yes).toBeChecked();
+
+    await userEvent.click(unrecorded);
+    await expect(unrecorded).toBeChecked();
+    await expect(yes).not.toBeChecked();
+
+    // "" is what parseCreateEntryForm reads back as null.
+    await expect(unrecorded).toHaveAttribute("value", "");
+  },
+};
+
+/** A blank form states the stored value rather than leaving it implied. */
+export const ExerciseDefaultsToUnrecorded: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(
+      canvas.getByRole("radio", { name: "Not recorded" }),
+    ).toBeChecked();
+    await expect(canvas.getByRole("radio", { name: "Yes" })).not.toBeChecked();
+    await expect(canvas.getByRole("radio", { name: "No" })).not.toBeChecked();
+  },
+};
