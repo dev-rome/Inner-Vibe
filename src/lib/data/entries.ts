@@ -15,7 +15,7 @@ export type Entry = {
   tags: Tag[];
 };
 
-type EntryRow = {
+export type EntryRow = {
   id: string;
   rating: number;
   note: string | null;
@@ -28,16 +28,24 @@ type EntryRow = {
     | null;
 };
 
+// Shared so the journal queries cannot drift from this shape.
+export const entrySelect =
+  "id, rating, note, sleep_hours, exercised, logged_at, entry_tags(tags(id, name, user_id))";
+
 // No user filter: RLS decides the rows, including the embedded tags.
-export async function getEntries(): Promise<Entry[]> {
+export async function getEntries(limit?: number): Promise<Entry[]> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("entries")
-    .select(
-      "id, rating, note, sleep_hours, exercised, logged_at, entry_tags(tags(id, name, user_id))",
-    )
+    .select(entrySelect)
     .order("logged_at", { ascending: false });
+
+  if (limit !== undefined) {
+    query = query.limit(limit);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     failRead("entries", error);
@@ -75,7 +83,50 @@ export async function createEntry(input: CreateEntryInput): Promise<string> {
   return data as string;
 }
 
-function toEntry(row: EntryRow): Entry {
+/**
+ * Replace an entry and its tags, atomically.
+ *
+ * Same reasoning as createEntry: the tag links are replaced by a DELETE then
+ * an INSERT, which must not be able to half-succeed.
+ */
+export async function updateEntry(
+  id: string,
+  input: CreateEntryInput,
+): Promise<void> {
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("update_entry", {
+    p_entry_id: id,
+    p_rating: input.rating,
+    p_note: input.note,
+    p_sleep_hours: input.sleepHours,
+    p_exercised: input.exercised,
+    p_tag_ids: input.tagIds,
+    p_new_tag_names: input.newTagNames,
+  });
+
+  if (error) {
+    failWrite("update entry", error);
+  }
+}
+
+/**
+ * Delete an entry. entry_tags cascades from the foreign key.
+ *
+ * No ownership check here: the RLS DELETE policy already restricts this to the
+ * caller's own rows, so a forged id simply matches nothing.
+ */
+export async function deleteEntry(id: string): Promise<void> {
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("entries").delete().eq("id", id);
+
+  if (error) {
+    failWrite("delete entry", error);
+  }
+}
+
+export function toEntry(row: EntryRow): Entry {
   return {
     id: row.id,
     rating: row.rating,

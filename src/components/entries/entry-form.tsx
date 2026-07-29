@@ -2,7 +2,11 @@
 
 import { useActionState, useState } from "react";
 import { createEntryAction } from "@/app/dashboard/actions";
-import { initialEntryFormState } from "@/app/dashboard/form-state";
+import {
+  initialEntryFormState,
+  type EntryFormState,
+  type EntrySubmission,
+} from "@/app/dashboard/form-state";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input, Textarea } from "@/components/ui/input";
 import { MoodSelector } from "./mood-selector";
@@ -12,15 +16,35 @@ import { MAX_NOTE_LENGTH, MAX_SLEEP_HOURS } from "@/lib/validation/entry";
 
 type EntryFormProps = {
   tags: Tag[];
+  /** Editing supplies its own; logging uses the create action. */
+  action?: (
+    previous: EntryFormState,
+    formData: FormData,
+  ) => Promise<EntryFormState>;
+  /** Existing values, so editing starts from the entry rather than blank. */
+  initialValues?: EntrySubmission;
+  submitLabel?: string;
+  pendingLabel?: string;
+  heading?: string;
+  /** Logging clears the form after saving; editing keeps the values. */
+  clearOnSuccess?: boolean;
 };
 
-export function EntryForm({ tags }: EntryFormProps) {
+export function EntryForm({
+  tags,
+  action = createEntryAction,
+  initialValues,
+  submitLabel = "Save entry",
+  pendingLabel = "Saving…",
+  heading = "Log a mood entry",
+  clearOnSuccess = true,
+}: EntryFormProps) {
   // No `pending` here: the Save button reads it from useFormStatus instead, so
   // only the button re-renders while the action is in flight.
-  const [state, formAction] = useActionState(
-    createEntryAction,
-    initialEntryFormState,
-  );
+  const [state, formAction] = useActionState(action, {
+    ...initialEntryFormState,
+    values: initialValues ?? initialEntryFormState.values,
+  });
 
   /*
    * Remounting the form is how it gets cleared, since form.reset() would leave
@@ -33,7 +57,11 @@ export function EntryForm({ tags }: EntryFormProps) {
   const [formKey, setFormKey] = useState(0);
   const [handledSaveAt, setHandledSaveAt] = useState<number | null>(null);
 
-  if (state.savedAt !== null && state.savedAt !== handledSaveAt) {
+  if (
+    clearOnSuccess &&
+    state.savedAt !== null &&
+    state.savedAt !== handledSaveAt
+  ) {
     setHandledSaveAt(state.savedAt);
     setFormKey(formKey + 1);
   }
@@ -41,7 +69,7 @@ export function EntryForm({ tags }: EntryFormProps) {
   return (
     <section aria-labelledby="entry-form-heading">
       <h2 id="entry-form-heading" className="sr-only">
-        Log a mood entry
+        {heading}
       </h2>
 
       {/* Outside the keyed form: a live region only announces changes to
@@ -152,7 +180,7 @@ export function EntryForm({ tags }: EntryFormProps) {
         />
 
         <div>
-          <SubmitButton pendingLabel="Saving…">Save entry</SubmitButton>
+          <SubmitButton pendingLabel={pendingLabel}>{submitLabel}</SubmitButton>
         </div>
       </form>
     </section>

@@ -13,6 +13,28 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
+/**
+ * Per-user settings.
+ *
+ * Created lazily on first save rather than by a trigger on auth.users: a
+ * trigger there is Supabase-internal surface that can break across upgrades,
+ * and an absent profile has a sensible default anyway.
+ *
+ * The timezone is what makes "a day" mean anything. Entries store an absolute
+ * instant, so grouping and filtering by date needs a zone to resolve against.
+ */
+export const profiles = pgTable("profiles", {
+  userId: uuid("user_id").primaryKey(),
+  // IANA name. The longest in the current database is 30 characters.
+  timeZone: varchar("time_zone", { length: 64 }).notNull().default("UTC"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 // Mood entries. One row per logged mood, owned by a user.
 export const entries = pgTable(
   "entries",

@@ -50,6 +50,27 @@
       "when": 1785185749855,
       "tag": "0006_create_entry_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785281364500,
+      "tag": "0007_naive_rumiko_fujikawa",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785281388647,
+      "tag": "0008_profiles_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785281938642,
+      "tag": "0009_update_entry_rpc",
+      "breakpoints": true
     }
   ]
 }
