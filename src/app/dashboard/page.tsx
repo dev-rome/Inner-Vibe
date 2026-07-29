@@ -21,6 +21,12 @@ export default async function Dashboard() {
         <h1 className="text-2xl">InnerVibe</h1>
         <div className="flex items-center gap-3">
           <Link
+            href="/dashboard/insights"
+            className="text-muted hover:text-ink text-sm underline underline-offset-2"
+          >
+            Insights
+          </Link>
+          <Link
             href="/dashboard/settings"
             className="text-muted hover:text-ink text-sm underline underline-offset-2"
           >

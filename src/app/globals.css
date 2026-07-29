@@ -33,6 +33,10 @@
   --color-muted: var(--sage-700);
   --color-subtle: var(--sage-600);
   --color-icon: var(--sage-500);
+
+  /* Chart lines and fills. Sage, never coral: a trend line is not one of the
+     three places the accent is allowed, and mood must never be colour-graded. */
+  --color-chart: var(--sage-500);
   --color-accent: var(--coral-500);
   --color-accent-hover: var(--coral-400);
   --color-accent-pressed: var(--coral-600);
@@ -111,12 +115,44 @@
   }
 }
 
+/*
+ * Reveal animations for the insights dashboard.
+ *
+ * All of them animate *from* a hidden state *to* the resting one and use
+ * `both`, so the final frame is the natural layout. That is what lets the
+ * reduced-motion rule below simply collapse them to nothing: the element ends
+ * up exactly where it would have been, just immediately.
+ */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+@keyframes wave-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@utility reveal-rise {
+  animation: rise-in 400ms var(--ease-out) both;
+}
+
+@utility reveal-wave {
+  animation: wave-in 300ms var(--ease-out) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    /* Kills the staggered and wave delays too, so nothing waits its turn. */
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }

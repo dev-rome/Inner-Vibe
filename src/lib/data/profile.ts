@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { failRead, failWrite } from "@/lib/data/errors";
 import { DEFAULT_TIME_ZONE, isValidTimeZone } from "@/lib/time-zone";
@@ -10,8 +11,11 @@ import { DEFAULT_TIME_ZONE, isValidTimeZone } from "@/lib/time-zone";
  * A stored value that this runtime does not recognise also falls back, since
  * the IANA database drops zones occasionally and a stale name should not break
  * every date on the page.
+ *
+ * Cached per request, because pages that stream several sections independently
+ * each need the zone and none of them should pay for its own round trip.
  */
-export async function getTimeZone(): Promise<string> {
+export const getTimeZone = cache(async function getTimeZone(): Promise<string> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -26,7 +30,7 @@ export async function getTimeZone(): Promise<string> {
   const stored = data?.time_zone;
 
   return stored && isValidTimeZone(stored) ? stored : DEFAULT_TIME_ZONE;
-}
+});
 
 export async function saveTimeZone(
   userId: string,

@@ -71,6 +71,27 @@
       "when": 1785281938642,
       "tag": "0009_update_entry_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785335325703,
+      "tag": "0010_insights_aggregates",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785353237990,
+      "tag": "0011_trend_note",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785355663323,
+      "tag": "0012_trend_note_cast",
+      "breakpoints": true
     }
   ]
 }
