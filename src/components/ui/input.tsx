@@ -5,7 +5,7 @@ import type { ComponentProps } from "react";
 // No width, margin or font size here — callers differ, and a duplicate utility
 // resolves by CSS order rather than class order.
 export const fieldClasses = [
-  "ease-standard rounded-sm border px-3 py-2 transition-colors duration-150",
+  "ease-standard rounded-sm border px-3 py-2 transition-colors duration-hover",
   "border-field bg-surface-raised text-ink placeholder:text-subtle",
   // Colours the field itself, not just the message, so the error is tied to
   // the input. aria-invalid is not a built-in Tailwind variant.

@@ -5,9 +5,14 @@ export type ButtonSize = "sm" | "md";
 
 const base = [
   "ease-standard inline-flex items-center justify-center gap-2",
-  "rounded-md border font-medium transition-colors duration-150",
-  "aria-disabled:cursor-not-allowed aria-disabled:opacity-60",
-  "disabled:cursor-not-allowed disabled:opacity-60",
+  "rounded-md border font-medium transition-[background-color,border-color,transform] duration-hover",
+  // A fraction smaller while held. Transform only, so it costs no layout and
+  // the global reduced-motion rule removes it without leaving the button stuck
+  // at the pressed size.
+  "active:scale-[0.98]",
+  // Nothing to press means nothing should respond to being pressed.
+  "aria-disabled:cursor-not-allowed aria-disabled:opacity-60 aria-disabled:active:scale-100",
+  "disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100",
 ].join(" ");
 
 // sm matches input padding so a button beside a field lines up.

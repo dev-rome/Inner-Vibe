@@ -3,7 +3,7 @@ import type { ComponentProps, ReactNode } from "react";
 // No coral: tags are not on the accent allowlist. Selection reads through
 // fill, border weight and a check glyph, so it is never colour alone.
 const chip = [
-  "ease-standard inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors duration-150",
+  "ease-standard inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors duration-hover",
   "border-line bg-surface-raised text-ink",
   "peer-hover:border-line-strong",
   "peer-checked:border-line-strong peer-checked:bg-surface-sunken peer-checked:font-medium",

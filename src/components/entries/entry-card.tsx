@@ -78,12 +78,19 @@ export function EntryCard({ entry, timeZone, href }: EntryCardProps) {
   }
 
   return (
-    // relative, or the stretched pseudo-element below covers the viewport
-    // instead of the card. focus-within moves the ring onto the card, since
-    // the link itself is only a screen-reader label.
+    // focus-within moves the ring onto the card, since the link itself is only
+    // a screen-reader label.
     <Card
       as="li"
-      className="focus-within:outline-focus relative focus-within:outline-2 focus-within:outline-offset-2"
+      className={[
+        // relative, or the stretched pseudo-element below covers the viewport.
+        "relative",
+        // A card-sized target with no hover state gives no sign it can be
+        // opened until you are already on it. Border and shadow only, so
+        // nothing moves and the list stays still under the cursor.
+        "ease-standard hover:border-line-strong duration-hover transition-[border-color,box-shadow] hover:shadow-md",
+        "focus-within:outline-focus focus-within:outline-2 focus-within:outline-offset-2",
+      ].join(" ")}
     >
       {/*
        * One link covering the card, stretched over it rather than wrapping the

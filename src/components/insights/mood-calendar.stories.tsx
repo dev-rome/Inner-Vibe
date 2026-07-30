@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, within } from "storybook/test";
 import type { DayMood } from "@/lib/data/insights";
 import { MoodCalendar } from "./mood-calendar";
-import { CalendarSkeleton } from "./insights-skeletons";
+import { CalendarSkeleton } from "@/components/dashboard/skeletons";
 
 function datesFrom(start: string, count: number): string[] {
   const begin = new Date(`${start}T00:00:00Z`);

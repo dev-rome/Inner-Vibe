@@ -105,7 +105,7 @@ export function RangeTabs({ current, heading, children }: RangeTabsProps) {
                 tabIndex={selected ? 0 : -1}
                 onClick={() => select(range)}
                 onKeyDown={(event) => onKeyDown(event, index)}
-                className="ease-standard relative rounded-full px-4 py-1.5 text-sm transition-colors duration-150"
+                className="ease-standard duration-hover relative rounded-full px-4 py-1.5 text-sm transition-colors"
               >
                 {/*
                  * The pill slides between tabs rather than cutting, because
@@ -117,10 +117,12 @@ export function RangeTabs({ current, heading, children }: RangeTabsProps) {
                     layoutId="range-pill"
                     aria-hidden="true"
                     className="bg-surface-raised absolute inset-0 rounded-full shadow-sm"
+                    // Softer than the default spring: it glides across and
+                    // settles rather than arriving and stopping dead.
                     transition={
                       reduced
                         ? { duration: 0 }
-                        : { type: "spring", stiffness: 380, damping: 32 }
+                        : { type: "spring", stiffness: 210, damping: 28 }
                     }
                   />
                 )}
@@ -142,7 +144,7 @@ export function RangeTabs({ current, heading, children }: RangeTabsProps) {
         role="tabpanel"
         aria-labelledby={tabId(current)}
         aria-busy={isPending}
-        className={`ease-standard transition-opacity duration-200 ${
+        className={`ease-standard duration-state transition-opacity ${
           isPending ? "opacity-40" : "opacity-100"
         }`}
       >

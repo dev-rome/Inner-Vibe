@@ -30,9 +30,11 @@ import { FactorCards } from "@/components/insights/factor-cards";
 import { MoodCalendar } from "@/components/insights/mood-calendar";
 import {
   CalendarSkeleton,
+  CheckInSkeleton,
   FactorCardsSkeleton,
+  InsightSkeleton,
   TrendSkeleton,
-} from "@/components/insights/insights-skeletons";
+} from "@/components/dashboard/skeletons";
 import { HeaderPill, PageHeader } from "@/components/shell/page-header";
 
 const RECENT_COUNT = 3;
@@ -49,6 +51,39 @@ const CALENDAR_MAX_DAYS = 35;
  */
 const WITHIN_BAND = "gap-4";
 const BETWEEN_BANDS = "gap-8";
+
+/*
+ * The order the page acknowledges a new entry in, top to bottom.
+ *
+ * Roughly 160ms apart, which is slow enough to follow with your eye and read as
+ * a sequence. Tighter than this and four sections arriving at once just looks
+ * like a stutter. The last one starts as the ring around your chosen face is
+ * finishing, so the page picks up where the check-in left off.
+ *
+ * The reduced-motion rule zeroes every delay, collapsing the whole cascade to
+ * everything simply being there.
+ */
+const CASCADE = {
+  trend: 120,
+  factors: 280,
+  calendar: 440,
+  lately: 600,
+} as const;
+
+/** Wraps a section so it re-announces itself when it remounts after a save. */
+function Settle({
+  delayMs,
+  children,
+}: {
+  delayMs: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="reveal-rise" style={{ animationDelay: `${delayMs}ms` }}>
+      {children}
+    </div>
+  );
+}
 
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -69,6 +104,20 @@ export default async function Dashboard({ searchParams }: PageProps) {
     day: "numeric",
     month: "long",
   }).format(new Date());
+
+  /*
+   * The cascade after a save, without a line of client state.
+   *
+   * These sections already carry entrance animations with staggered delays;
+   * they simply never replay, because a Server Action refresh reconciles the
+   * tree rather than remounting it. Keying them on the entry count means a new
+   * entry — and only a new entry — rebuilds them, so the chart draws itself
+   * again, the calendar waves back in and the list settles, one after another.
+   *
+   * Changing the range does not touch this key, so switching Week to Month
+   * still crossfades rather than re-announcing the whole page.
+   */
+  const savedKey = summary.totalEntries;
 
   return (
     <div
@@ -92,7 +141,12 @@ export default async function Dashboard({ searchParams }: PageProps) {
           tone="hero"
           className="lg:col-span-2"
         >
-          <CheckIn />
+          {/* The tags query is the only thing this waits on, but it is the
+              hero card: an empty box where the scale should be is the first
+              thing anyone sees. */}
+          <Suspense fallback={<CheckInSkeleton />}>
+            <CheckIn />
+          </Suspense>
         </DashboardCard>
 
         <Suspense fallback={<InsightSkeleton />}>
@@ -119,13 +173,13 @@ export default async function Dashboard({ searchParams }: PageProps) {
             className="lg:col-span-2"
           >
             <Suspense fallback={<TrendSkeleton />}>
-              <Trend range={range} timeZone={timeZone} />
+              <Trend key={savedKey} range={range} timeZone={timeZone} />
             </Suspense>
           </DashboardCard>
 
           <section aria-label="What went with it">
             <Suspense fallback={<FactorCardsSkeleton />}>
-              <Factors range={range} timeZone={timeZone} />
+              <Factors key={savedKey} range={range} timeZone={timeZone} />
             </Suspense>
           </section>
         </div>
@@ -143,7 +197,7 @@ export default async function Dashboard({ searchParams }: PageProps) {
           description="Choose a day to open it."
         >
           <Suspense fallback={<CalendarSkeleton />}>
-            <Calendar timeZone={timeZone} />
+            <Calendar key={savedKey} timeZone={timeZone} />
           </Suspense>
         </DashboardCard>
 
@@ -161,7 +215,7 @@ export default async function Dashboard({ searchParams }: PageProps) {
           }
         >
           <Suspense fallback={<EntryListSkeleton count={RECENT_COUNT} />}>
-            <Lately timeZone={timeZone} />
+            <Lately key={savedKey} timeZone={timeZone} />
           </Suspense>
         </DashboardCard>
       </div>
@@ -191,20 +245,15 @@ async function Insight({
   return <InsightCard insight={deriveInsight(exercise, sleep)} />;
 }
 
-function InsightSkeleton() {
-  return (
-    <div
-      className="bg-ink/90 h-full min-h-44 animate-pulse rounded-lg"
-      aria-hidden="true"
-    />
-  );
-}
-
 async function Trend({ range, timeZone }: { range: Range; timeZone: string }) {
   const window = resolveRange(range, timeZone);
   const points = await getMoodOverTime(range, window, timeZone);
 
-  return <MoodTrend points={points} range={range} />;
+  return (
+    <Settle delayMs={CASCADE.trend}>
+      <MoodTrend points={points} range={range} />
+    </Settle>
+  );
 }
 
 async function Factors({
@@ -222,7 +271,11 @@ async function Factors({
     getMoodBySleep(window),
   ]);
 
-  return <FactorCards exercise={exercise} sleep={sleep} />;
+  return (
+    <Settle delayMs={CASCADE.factors}>
+      <FactorCards exercise={exercise} sleep={sleep} />
+    </Settle>
+  );
 }
 
 /**
@@ -235,10 +288,34 @@ async function Calendar({ timeZone }: { timeZone: string }) {
   const days = await getMoodByDay(month, timeZone);
   const dates = datesInWindow(month, timeZone).slice(-CALENDAR_MAX_DAYS);
 
-  return <MoodCalendar days={days} dates={dates} />;
+  return (
+    <Settle delayMs={CASCADE.calendar}>
+      <MoodCalendar days={days} dates={dates} />
+    </Settle>
+  );
 }
 
 async function Lately({ timeZone }: { timeZone: string }) {
   const entries = await getEntries(RECENT_COUNT);
-  return <EntryList entries={entries} timeZone={timeZone} linkToDetail />;
+
+  return (
+    <Settle delayMs={CASCADE.lately}>
+      <EntryList
+        entries={entries}
+        timeZone={timeZone}
+        linkToDetail
+        // The default copy points at a form "above", which is true in the
+        // journal and wrong here: on a wide screen the check-in is a column
+        // away, not overhead.
+        empty={
+          <>
+            <p className="text-ink">Nothing here yet.</p>
+            <p className="text-muted mt-1 text-sm">
+              Whatever you log will show up here, newest first.
+            </p>
+          </>
+        }
+      />
+    </Settle>
+  );
 }

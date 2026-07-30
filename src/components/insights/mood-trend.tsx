@@ -166,7 +166,9 @@ export function MoodTrend({ points, range }: MoodTrendProps) {
             // Recharts animates in JavaScript, so the CSS reduced-motion rule
             // cannot reach it. Without this the line still draws itself.
             isAnimationActive={!reduced}
-            animationDuration={800}
+            // The page's slowest animation on purpose: it is the anchor, and a
+            // line that draws itself unhurriedly is the thing worth watching.
+            animationDuration={1200}
             animationEasing="ease-out"
           />
 

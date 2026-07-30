@@ -78,13 +78,28 @@
   --shadow-md: 0 2px 8px rgb(41 43 39 / 0.06);
 
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-}
+  /*
+   * Cubic, not exponential.
+   *
+   * The previous curve (0.16, 1, 0.3, 1) leaves at almost full speed and spends
+   * most of its time arriving. It reads as a snap followed by a drift — precise,
+   * but abrupt at the moment you notice it most. This one starts gently and
+   * settles evenly, which is what "smooth" actually means here.
+   */
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
 
-:root {
-  --duration-hover: 150ms;
-  --duration-default: 200ms;
-  --duration-panel: 300ms;
+  /*
+   * One timing scale, in the theme rather than in :root.
+   *
+   * These used to sit in :root, where Tailwind generates no utilities from
+   * them, so every component reached for a raw duration-150 instead and the
+   * tokens were decorative. Under --transition-duration-* they become real
+   * duration-hover / duration-state / duration-panel classes, which is what
+   * makes the whole app's pace adjustable from four lines.
+   */
+  --transition-duration-hover: 220ms;
+  --transition-duration-state: 320ms;
+  --transition-duration-panel: 480ms;
 }
 
 @layer base {
@@ -137,12 +152,37 @@
   }
 }
 
+/*
+ * Skeleton blocks breathe rather than blink.
+ *
+ * Tailwind's animate-pulse drops to half opacity on a curve that reads as a
+ * flash, and it has to be applied to a whole subtree, which dims real text if
+ * any is mixed in. This is one utility per placeholder block, alternating
+ * gently between two close values.
+ *
+ * Under reduced motion the global rule caps it at one near-instant iteration,
+ * which leaves it resting at full opacity rather than mid-fade.
+ */
+@keyframes breathe {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@utility skeleton {
+  background-color: var(--color-surface-sunken);
+  animation: breathe 1.7s var(--ease-standard) infinite alternate;
+}
+
 @utility reveal-rise {
-  animation: rise-in 400ms var(--ease-out) both;
+  animation: rise-in 620ms var(--ease-out) both;
 }
 
 @utility reveal-wave {
-  animation: wave-in 300ms var(--ease-out) both;
+  animation: wave-in 520ms var(--ease-out) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

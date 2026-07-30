@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { createEntryAction } from "@/app/dashboard/actions";
 import {
   initialEntryFormState,
@@ -13,6 +14,13 @@ import { MoodSelector } from "./mood-selector";
 import { TagPicker } from "./tag-picker";
 import type { Tag } from "@/lib/data/tags";
 import { MAX_NOTE_LENGTH, MAX_SLEEP_HOURS } from "@/lib/validation/entry";
+import { useReducedMotion } from "@/lib/use-reduced-motion";
+
+/** Where the ring starts, relative to the mood scale it sits over. */
+type Ripple = { id: number; left: number; top: number; size: number };
+
+/** The same curve as --ease-out, since Motion cannot read a CSS variable. */
+const EASE_OUT = [0.33, 1, 0.68, 1] as const;
 
 type EntryFormProps = {
   tags: Tag[];
@@ -68,13 +76,71 @@ export function EntryForm({
   const [handledSaveAt, setHandledSaveAt] = useState<number | null>(null);
 
   /*
-   * Open once a mood is chosen, and stay open. A rejected submit must not fold
-   * the card back up over the note the reader just typed, so this is deliberately
-   * not derived from the current rating.
+   * Set when a mood is chosen, cleared when a save is handled. A rejected
+   * submit must not fold the card back up over the note the reader just typed,
+   * so this is deliberately not derived from the current rating.
    */
-  const [expanded, setExpanded] = useState(
+  const [picked, setPicked] = useState(
     !collapsible || Boolean(state.values.rating),
   );
+
+  const reduced = useReducedMotion();
+
+  /*
+   * A ring leaves the face you chose when the form is submitted.
+   *
+   * Acknowledgement at the point of action, and nothing more. The chart, the
+   * calendar and the recent list all say what they have to say by updating a
+   * moment later, so nothing needs to travel across the page to connect them.
+   *
+   * Measured against the wrapper rather than the page: the ring is a sibling of
+   * the tiles, so it moves with them and a scroll cannot put it out of place.
+   */
+  const scaleRef = useRef<HTMLDivElement>(null);
+  const [ripple, setRipple] = useState<Ripple | null>(null);
+
+  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    if (!collapsible) return;
+
+    const host = scaleRef.current;
+    if (!host) return;
+
+    /*
+     * Come back to the scale before the card folds.
+     *
+     * Saving collapses several hundred pixels of form, so anyone who scrolled
+     * down to write a note has the page pulled up from under them and misses
+     * both the ring and the cascade. Scrolling first means the fold happens
+     * where they are already looking.
+     *
+     * Not gated on reduced motion — losing your place is a layout problem, not
+     * a decorative one. Only the smoothness is a preference.
+     */
+    const origin = host.getBoundingClientRect();
+    if (origin.top < 0 || origin.bottom > window.innerHeight) {
+      host.scrollIntoView({
+        behavior: reduced ? "auto" : "smooth",
+        block: "center",
+      });
+    }
+
+    if (reduced) return;
+
+    const tile = event.currentTarget
+      .querySelector<HTMLInputElement>('input[name="rating"]:checked')
+      ?.closest("label");
+    if (!tile) return;
+
+    const from = tile.getBoundingClientRect();
+
+    setRipple({
+      // Counted, so logging twice in a row plays it twice rather than once.
+      id: Date.now(),
+      left: from.left - origin.left,
+      top: from.top - origin.top,
+      size: from.width,
+    });
+  }
 
   if (
     clearOnSuccess &&
@@ -83,9 +149,10 @@ export function EntryForm({
   ) {
     setHandledSaveAt(state.savedAt);
     setFormKey(formKey + 1);
-    // A cleared form has no mood, so the card returns to its resting size.
-    if (collapsible) setExpanded(false);
+    if (collapsible) setPicked(false);
   }
+
+  const expanded = picked;
 
   return (
     <section aria-labelledby="entry-form-heading">
@@ -107,19 +174,48 @@ export function EntryForm({
       <form
         key={formKey}
         action={formAction}
-        className={`flex flex-col ${expanded ? "gap-8" : "gap-4"}`}
+        onSubmit={onSubmit}
+        // One gap, because the revealed fields now carry their own spacing.
+        // Switching the parent's gap on expand would animate the height while
+        // the surrounding gaps jumped, which is the jolt this is avoiding.
+        className="flex flex-col gap-4"
       >
         {/*
          * The change event from the radios bubbles, so the card can open
          * without MoodSelector needing to know it is inside a collapsible one.
          */}
-        <div onChange={collapsible ? () => setExpanded(true) : undefined}>
+        <div
+          ref={scaleRef}
+          className="relative"
+          onChange={collapsible ? () => setPicked(true) : undefined}
+        >
           <MoodSelector
             defaultValue={state.values.rating}
             name="rating"
             errorId="rating-error"
             hasError={Boolean(state.fieldErrors.rating)}
           />
+
+          {ripple && (
+            <motion.span
+              // Remounts per save, which is what replays the animation.
+              key={ripple.id}
+              aria-hidden="true"
+              onAnimationComplete={() => setRipple(null)}
+              className="border-accent pointer-events-none absolute rounded-md border-2"
+              style={{
+                left: ripple.left,
+                top: ripple.top,
+                width: ripple.size,
+                height: ripple.size,
+              }}
+              initial={{ opacity: 0.7, scale: 1 }}
+              animate={{ opacity: 0, scale: 1.6 }}
+              // Slow and wide. A quick ring reads as a click confirmation; this
+              // is meant to feel like something spreading out from the choice.
+              transition={{ duration: 0.95, ease: EASE_OUT }}
+            />
+          )}
         </div>
         <FieldError id="rating-error" messages={state.fieldErrors.rating} />
 
@@ -133,49 +229,64 @@ export function EntryForm({
          * Unmounted rather than hidden. A hidden-but-present note field would
          * still post whatever a previous expansion left in it, and a collapsed
          * card has to submit exactly what it shows.
+         *
+         * The height is animated on the way out so the page settles rather than
+         * jumping. overflow-hidden while it folds, or the fields spill past the
+         * shrinking box; the gap lives inside so it collapses with everything
+         * else instead of leaving a hole behind.
          */}
-        {expanded && (
-          <>
-            <NoteField
-              error={state.fieldErrors.note}
-              defaultValue={state.values.note}
-            />
+        <AnimatePresence initial={false}>
+          {expanded && (
+            <motion.div
+              key="details"
+              initial={reduced ? false : { height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={reduced ? { opacity: 0 } : { height: 0, opacity: 0 }}
+              transition={
+                reduced ? { duration: 0 } : { duration: 0.46, ease: EASE_OUT }
+              }
+              className="flex flex-col gap-8 overflow-hidden"
+            >
+              <NoteField
+                error={state.fieldErrors.note}
+                defaultValue={state.values.note}
+              />
 
-            <fieldset>
-              <legend className="text-ink text-base font-medium">
-                Anything that might have played a part?
-              </legend>
-              <p className="text-muted mt-1 text-sm">Optional.</p>
+              <fieldset>
+                <legend className="text-ink text-base font-medium">
+                  Anything that might have played a part?
+                </legend>
+                <p className="text-muted mt-1 text-sm">Optional.</p>
 
-              <div className="mt-3 flex flex-wrap items-end gap-6">
-                <div>
-                  <label
-                    htmlFor="sleepHours"
-                    className="text-muted block text-sm"
-                  >
-                    Hours slept
-                  </label>
-                  <Input
-                    id="sleepHours"
-                    name="sleepHours"
-                    type="number"
-                    inputMode="decimal"
-                    step="0.5"
-                    min="0"
-                    max={MAX_SLEEP_HOURS}
-                    placeholder="7.5"
-                    defaultValue={state.values.sleepHours}
-                    aria-describedby={
-                      state.fieldErrors.sleepHours ? "sleep-error" : undefined
-                    }
-                    aria-invalid={
-                      Boolean(state.fieldErrors.sleepHours) || undefined
-                    }
-                    className="mt-1.5 w-28 font-mono tabular-nums"
-                  />
-                </div>
+                <div className="mt-3 flex flex-wrap items-end gap-6">
+                  <div>
+                    <label
+                      htmlFor="sleepHours"
+                      className="text-muted block text-sm"
+                    >
+                      Hours slept
+                    </label>
+                    <Input
+                      id="sleepHours"
+                      name="sleepHours"
+                      type="number"
+                      inputMode="decimal"
+                      step="0.5"
+                      min="0"
+                      max={MAX_SLEEP_HOURS}
+                      placeholder="7.5"
+                      defaultValue={state.values.sleepHours}
+                      aria-describedby={
+                        state.fieldErrors.sleepHours ? "sleep-error" : undefined
+                      }
+                      aria-invalid={
+                        Boolean(state.fieldErrors.sleepHours) || undefined
+                      }
+                      className="mt-1.5 w-28 font-mono tabular-nums"
+                    />
+                  </div>
 
-                {/*
+                  {/*
               Radios rather than a checkbox: unanswered has to stay null, and a
               checkbox would record every skipped question as "no".
 
@@ -187,67 +298,68 @@ export function EntryForm({
 
               Neutral selected state; this is not on the coral allowlist.
             */}
-                <fieldset>
-                  <legend className="text-muted text-sm">Exercised?</legend>
-                  <div className="mt-1.5 flex gap-2">
-                    {[
-                      { value: "", label: "Not recorded" },
-                      { value: "yes", label: "Yes" },
-                      { value: "no", label: "No" },
-                    ].map((choice) => (
-                      <label
-                        key={choice.value || "unrecorded"}
-                        className="cursor-pointer"
-                      >
-                        <input
-                          type="radio"
-                          name="exercised"
-                          value={choice.value}
-                          defaultChecked={
-                            state.values.exercised === choice.value
-                          }
-                          className="peer sr-only"
-                        />
-                        <span
-                          className={[
-                            "ease-standard inline-flex rounded-md border px-4 py-2 text-sm transition-colors duration-150",
-                            "border-line bg-surface-raised text-ink hover:border-line-strong",
-                            "peer-checked:border-line-strong peer-checked:bg-surface-sunken peer-checked:font-medium",
-                            "peer-checked:before:mr-1.5 peer-checked:before:content-['✓']",
-                            "peer-focus-visible:outline-focus peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2",
-                          ].join(" ")}
+                  <fieldset>
+                    <legend className="text-muted text-sm">Exercised?</legend>
+                    <div className="mt-1.5 flex gap-2">
+                      {[
+                        { value: "", label: "Not recorded" },
+                        { value: "yes", label: "Yes" },
+                        { value: "no", label: "No" },
+                      ].map((choice) => (
+                        <label
+                          key={choice.value || "unrecorded"}
+                          className="cursor-pointer"
                         >
-                          {choice.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-              </div>
+                          <input
+                            type="radio"
+                            name="exercised"
+                            value={choice.value}
+                            defaultChecked={
+                              state.values.exercised === choice.value
+                            }
+                            className="peer sr-only"
+                          />
+                          <span
+                            className={[
+                              "ease-standard duration-hover inline-flex rounded-md border px-4 py-2 text-sm transition-colors",
+                              "border-line bg-surface-raised text-ink hover:border-line-strong",
+                              "peer-checked:border-line-strong peer-checked:bg-surface-sunken peer-checked:font-medium",
+                              "peer-checked:before:mr-1.5 peer-checked:before:content-['✓']",
+                              "peer-focus-visible:outline-focus peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2",
+                            ].join(" ")}
+                          >
+                            {choice.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                </div>
 
-              <FieldError
-                id="sleep-error"
-                messages={state.fieldErrors.sleepHours}
+                <FieldError
+                  id="sleep-error"
+                  messages={state.fieldErrors.sleepHours}
+                />
+              </fieldset>
+
+              <TagPicker
+                tags={tags}
+                selectedIds={state.values.tagIds}
+                pendingNames={state.values.newTagNames}
               />
-            </fieldset>
+              <FieldError
+                id="new-tag-error"
+                messages={state.fieldErrors.newTagNames}
+              />
 
-            <TagPicker
-              tags={tags}
-              selectedIds={state.values.tagIds}
-              pendingNames={state.values.newTagNames}
-            />
-            <FieldError
-              id="new-tag-error"
-              messages={state.fieldErrors.newTagNames}
-            />
-
-            <div>
-              <SubmitButton pendingLabel={pendingLabel}>
-                {submitLabel}
-              </SubmitButton>
-            </div>
-          </>
-        )}
+              <div>
+                <SubmitButton pendingLabel={pendingLabel}>
+                  {submitLabel}
+                </SubmitButton>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </form>
     </section>
   );

@@ -25,7 +25,7 @@ export function GreetingTitle({
           href="/dashboard/profile"
           aria-label="Change your name"
           title="Change your name"
-          className="text-icon hover:text-ink hover:bg-surface-sunken ease-standard rounded-sm p-1.5 transition-colors duration-150"
+          className="text-icon hover:text-ink hover:bg-surface-sunken ease-standard duration-hover rounded-sm p-1.5 transition-colors"
         >
           <svg
             viewBox="0 0 24 24"

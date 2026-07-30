@@ -1,9 +1,15 @@
 import type { ComponentProps } from "react";
 
 const tile = [
-  "ease-standard flex aspect-square w-full items-center justify-center rounded-md border text-2xl transition-colors duration-150 sm:text-3xl",
+  // transition-all, not transition-colors: the selected tile lifts and grows,
+  // and colour alone would snap those.
+  "ease-out flex aspect-square w-full items-center justify-center rounded-md border text-2xl transition-all duration-state sm:text-3xl",
   "border-line bg-surface-sunken",
   "peer-hover:border-line-strong",
+  // The daily interaction, so it gets to feel like something. Scale and
+  // translate only, both compositor properties, both killed by the global
+  // reduced-motion rule.
+  "peer-checked:-translate-y-0.5 peer-checked:scale-105 peer-checked:shadow-md",
   // accent-pressed, not accent: coral-600 is 3.04:1 against the page where
   // coral-500 is 2.44:1, so the boundary stays perceivable.
   "peer-checked:border-accent-pressed peer-checked:bg-accent",

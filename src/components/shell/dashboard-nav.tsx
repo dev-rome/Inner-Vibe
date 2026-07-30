@@ -46,7 +46,7 @@ function SidebarLink({ item, pathname }: { item: NavItem; pathname: string }) {
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
-      className={`ease-standard relative flex items-center gap-2.5 rounded-sm py-2 pr-2.5 pl-4 text-sm transition-colors duration-150 ${
+      className={`ease-standard duration-hover relative flex items-center gap-2.5 rounded-sm py-2 pr-2.5 pl-4 text-sm transition-colors ${
         active ? "text-ink font-medium" : "text-muted hover:text-ink"
       }`}
     >
@@ -67,7 +67,7 @@ function SidebarLink({ item, pathname }: { item: NavItem; pathname: string }) {
           transition={
             reduced
               ? { duration: 0 }
-              : { type: "spring", stiffness: 420, damping: 34 }
+              : { type: "spring", stiffness: 230, damping: 29 }
           }
         />
       )}
@@ -106,7 +106,7 @@ export function BottomNav() {
         <li className="relative w-20 shrink-0">
           <Link
             href={CHECK_IN_HREF}
-            className="bg-accent text-accent-ink ease-standard hover:bg-accent-hover absolute -top-5 left-1/2 flex size-14 -translate-x-1/2 items-center justify-center rounded-full shadow-md transition-colors duration-150"
+            className="bg-accent text-accent-ink ease-standard hover:bg-accent-hover duration-hover absolute -top-5 left-1/2 flex size-14 -translate-x-1/2 items-center justify-center rounded-full shadow-md transition-colors"
           >
             <svg
               viewBox="0 0 24 24"

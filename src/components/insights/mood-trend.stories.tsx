@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, within } from "storybook/test";
 import type { TrendPoint } from "@/lib/data/insights";
 import { MoodTrend } from "./mood-trend";
-import { TrendSkeleton } from "./insights-skeletons";
+import { TrendSkeleton } from "@/components/dashboard/skeletons";
 
 const week: TrendPoint[] = [
   { date: "2026-07-23", average: 3.0, count: 1, note: "Long day." },

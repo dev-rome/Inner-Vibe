@@ -104,7 +104,7 @@ function FactorRowItem({ row, isBest }: { row: FactorRow; isBest: boolean }) {
         aria-label={`${row.label}: average ${row.average.toFixed(1)} out of ${MAX_RATING}, from ${row.count} ${row.count === 1 ? "entry" : "entries"}`}
       >
         <div
-          className={`h-full rounded-full transition-[width] duration-500 ease-out ${
+          className={`duration-panel h-full rounded-full transition-[width] ease-out ${
             isBest ? "bg-accent" : "bg-chart"
           }`}
           style={{ width: `${Math.round(fraction * 100)}%` }}

@@ -14,12 +14,12 @@ type EntryFiltersProps = {
 };
 
 const chip = [
-  "ease-standard inline-flex items-center rounded-full border px-3 py-1.5 text-xs transition-colors duration-150",
+  "ease-standard inline-flex items-center rounded-full border px-3 py-1.5 text-xs transition-colors duration-hover",
   "border-line bg-surface-raised text-ink hover:border-line-strong",
 ].join(" ");
 
 const chipActive = [
-  "ease-standard inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium transition-colors duration-150",
+  "ease-standard inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium transition-colors duration-hover",
   "border-line-strong bg-surface-sunken text-ink before:mr-1 before:content-['✓']",
 ].join(" ");
 

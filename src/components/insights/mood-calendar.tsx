@@ -3,8 +3,14 @@ import type { DayMood } from "@/lib/data/insights";
 import { moodForRating } from "@/lib/moods";
 import { MAX_RATING, MIN_RATING } from "@/lib/validation/entry";
 
-/** Each tile waits this much longer than the one before it. */
-const WAVE_STEP_MS = 12;
+/**
+ * Each tile waits this much longer than the one before it.
+ *
+ * Across a 35 day grid this is most of a second from first tile to last, which
+ * is what makes it read as a wave crossing the month rather than the whole
+ * block appearing at once with a slight blur.
+ */
+const WAVE_STEP_MS = 22;
 
 /** Monday first, matching the en-GB formatting used everywhere else. */
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -154,7 +160,7 @@ function DayTile({
       href={href}
       aria-label={description}
       title={description}
-      className={`${tileShell} border-line-strong hover:border-ink ease-standard transition-colors duration-150`}
+      className={`${tileShell} border-line-strong hover:border-ink ease-standard duration-hover transition-colors`}
       style={{
         ...style,
         // Single hue at varying strength. color-mix keeps this tied to the one
