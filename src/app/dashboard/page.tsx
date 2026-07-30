@@ -1,83 +1,244 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { signout } from "../(auth)/actions";
 import { getEntries } from "@/lib/data/entries";
 import { getTags } from "@/lib/data/tags";
-import { getTimeZone } from "@/lib/data/profile";
+import { getProfile } from "@/lib/data/profile";
+import {
+  getInsightsSummary,
+  getMoodByDay,
+  getMoodByExercise,
+  getMoodBySleep,
+  getMoodOverTime,
+} from "@/lib/data/insights";
+import {
+  DEFAULT_RANGE,
+  datesInWindow,
+  isRange,
+  resolveRange,
+  type Range,
+} from "@/lib/insights-range";
+import { contextLine, deriveInsight } from "@/lib/insights-copy";
+import { GreetingTitle } from "@/components/dashboard/greeting-title";
+import { DashboardCard } from "@/components/dashboard/dashboard-card";
+import { InsightCard } from "@/components/dashboard/insight-card";
 import { EntryForm } from "@/components/entries/entry-form";
 import { EntryList } from "@/components/entries/entry-list";
 import { EntryListSkeleton } from "@/components/entries/entry-skeleton";
-import { SubmitButton } from "@/components/ui/submit-button";
-import { Card } from "@/components/ui/card";
+import { RangeTabs } from "@/components/insights/range-tabs";
+import { MoodTrend } from "@/components/insights/mood-trend";
+import { FactorCards } from "@/components/insights/factor-cards";
+import { MoodCalendar } from "@/components/insights/mood-calendar";
+import {
+  CalendarSkeleton,
+  FactorCardsSkeleton,
+  TrendSkeleton,
+} from "@/components/insights/insights-skeletons";
+import { HeaderPill, PageHeader } from "@/components/shell/page-header";
 
 const RECENT_COUNT = 3;
 
-export default async function Dashboard() {
-  const tags = await getTags();
+/** The calendar reads as a month grid at most, never a wall of tiles. */
+const CALENDAR_MAX_DAYS = 35;
+
+/*
+ * Vertical rhythm.
+ *
+ * Cards inside a band sit closer together than bands do to each other, which is
+ * what makes four bands read as four things rather than as six loose cards. One
+ * gap value each, so the ratio stays deliberate instead of accumulating.
+ */
+const WITHIN_BAND = "gap-4";
+const BETWEEN_BANDS = "gap-8";
+
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function Dashboard({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const range = isRange(params.range) ? params.range : DEFAULT_RANGE;
+
+  const { timeZone, displayName } = await getProfile();
+  const summary = await getInsightsSummary(timeZone);
+
+  // Formatted in the profile's zone for the same reason the greeting is: the
+  // server's idea of today is UTC, which is yesterday for a good part of it.
+  const today = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date());
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-6 py-8">
-      <header className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl">InnerVibe</h1>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard/insights"
-            className="text-muted hover:text-ink text-sm underline underline-offset-2"
+    <div
+      className={`mx-auto flex w-full max-w-6xl flex-col px-5 py-8 sm:px-6 lg:px-10 ${BETWEEN_BANDS}`}
+    >
+      {/* Band 1 */}
+      <PageHeader
+        title={<GreetingTitle displayName={displayName} timeZone={timeZone} />}
+        description={contextLine(summary)}
+        actions={<HeaderPill>{today}</HeaderPill>}
+      />
+
+      {/* Band 2: the check-in leads, the observation sits beside it. */}
+      <div
+        className={`grid grid-cols-1 items-start lg:grid-cols-3 ${WITHIN_BAND}`}
+      >
+        <DashboardCard
+          id="check-in"
+          eyebrow="Check in"
+          title="How are you, right now?"
+          tone="hero"
+          className="lg:col-span-2"
+        >
+          <CheckIn />
+        </DashboardCard>
+
+        <Suspense fallback={<InsightSkeleton />}>
+          <Insight range={range} timeZone={timeZone} />
+        </Suspense>
+      </div>
+
+      {/* Band 3: the chart anchors, the factors read alongside it. */}
+      <RangeTabs
+        current={range}
+        heading={
+          <h2 className="text-xl">
+            Your mood over time
+            <span className="sr-only"> — choose a range below</span>
+          </h2>
+        }
+      >
+        <div
+          className={`grid grid-cols-1 items-start lg:grid-cols-3 ${WITHIN_BAND}`}
+        >
+          <DashboardCard
+            eyebrow={range === "year" ? "Weekly average" : "Daily average"}
+            title="How you have been"
+            className="lg:col-span-2"
           >
-            Insights
-          </Link>
-          <Link
-            href="/dashboard/settings"
-            className="text-muted hover:text-ink text-sm underline underline-offset-2"
-          >
-            Settings
-          </Link>
-          <form action={signout}>
-            <SubmitButton
-              variant="secondary"
-              size="sm"
-              pendingLabel="Logging out…"
-            >
-              Log out
-            </SubmitButton>
-          </form>
+            <Suspense fallback={<TrendSkeleton />}>
+              <Trend range={range} timeZone={timeZone} />
+            </Suspense>
+          </DashboardCard>
+
+          <section aria-label="What went with it">
+            <Suspense fallback={<FactorCardsSkeleton />}>
+              <Factors range={range} timeZone={timeZone} />
+            </Suspense>
+          </section>
         </div>
-      </header>
+      </RangeTabs>
 
-      <Card className="mt-8">
-        <EntryForm tags={tags} />
-      </Card>
-
-      {/*
-       * The dashboard shows only the last few. The full history lives in the
-       * journal, so this page does not grow without bound as entries pile up.
-       */}
-      <section className="mt-12">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-xl">Recent</h2>
-          <Link
-            href="/dashboard/journal"
-            className="text-muted hover:text-ink text-sm underline underline-offset-2"
-          >
-            View journal
-          </Link>
-        </div>
-
-        <div className="mt-4">
-          <Suspense fallback={<EntryListSkeleton count={RECENT_COUNT} />}>
-            <Recent />
+      {/* Band 4 */}
+      <div
+        className={`grid grid-cols-1 items-start lg:grid-cols-3 ${WITHIN_BAND}`}
+      >
+        {/* The calendar is a fixed-width texture, so it takes the narrow
+            column. Entries are text and need the room. */}
+        <DashboardCard
+          eyebrow="This month"
+          title="Day by day"
+          description="Choose a day to open it."
+        >
+          <Suspense fallback={<CalendarSkeleton />}>
+            <Calendar timeZone={timeZone} />
           </Suspense>
-        </div>
-      </section>
-    </main>
+        </DashboardCard>
+
+        <DashboardCard
+          eyebrow="Lately"
+          title="Last few entries"
+          className="lg:col-span-2"
+          action={
+            <Link
+              href="/dashboard/journal"
+              className="text-muted hover:text-ink text-sm underline underline-offset-2"
+            >
+              See all
+            </Link>
+          }
+        >
+          <Suspense fallback={<EntryListSkeleton count={RECENT_COUNT} />}>
+            <Lately timeZone={timeZone} />
+          </Suspense>
+        </DashboardCard>
+      </div>
+    </div>
   );
 }
 
-async function Recent() {
-  const [entries, timeZone] = await Promise.all([
-    getEntries(RECENT_COUNT),
-    getTimeZone(),
+async function CheckIn() {
+  const tags = await getTags();
+  return <EntryForm tags={tags} collapsible submitLabel="Log this moment" />;
+}
+
+async function Insight({
+  range,
+  timeZone,
+}: {
+  range: Range;
+  timeZone: string;
+}) {
+  const window = resolveRange(range, timeZone);
+
+  const [exercise, sleep] = await Promise.all([
+    getMoodByExercise(window),
+    getMoodBySleep(window),
   ]);
 
+  return <InsightCard insight={deriveInsight(exercise, sleep)} />;
+}
+
+function InsightSkeleton() {
+  return (
+    <div
+      className="bg-ink/90 h-full min-h-44 animate-pulse rounded-lg"
+      aria-hidden="true"
+    />
+  );
+}
+
+async function Trend({ range, timeZone }: { range: Range; timeZone: string }) {
+  const window = resolveRange(range, timeZone);
+  const points = await getMoodOverTime(range, window, timeZone);
+
+  return <MoodTrend points={points} range={range} />;
+}
+
+async function Factors({
+  range,
+  timeZone,
+}: {
+  range: Range;
+  timeZone: string;
+}) {
+  const window = resolveRange(range, timeZone);
+
+  // Independent aggregates, so they go out together rather than in sequence.
+  const [exercise, sleep] = await Promise.all([
+    getMoodByExercise(window),
+    getMoodBySleep(window),
+  ]);
+
+  return <FactorCards exercise={exercise} sleep={sleep} />;
+}
+
+/**
+ * Fixed to a month whatever the range above says. The heatmap is about the
+ * texture of recent days, and a year of tiles is a wall rather than a texture.
+ */
+async function Calendar({ timeZone }: { timeZone: string }) {
+  const month = resolveRange("month", timeZone);
+
+  const days = await getMoodByDay(month, timeZone);
+  const dates = datesInWindow(month, timeZone).slice(-CALENDAR_MAX_DAYS);
+
+  return <MoodCalendar days={days} dates={dates} />;
+}
+
+async function Lately({ timeZone }: { timeZone: string }) {
+  const entries = await getEntries(RECENT_COUNT);
   return <EntryList entries={entries} timeZone={timeZone} linkToDetail />;
 }

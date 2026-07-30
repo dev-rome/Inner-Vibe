@@ -15,7 +15,7 @@ export default function DashboardError({
   }, [error]);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 px-6 text-center">
+    <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 px-6 text-center">
       <h1 className="text-ink text-xl font-medium">
         We could not load your entries
       </h1>
@@ -26,6 +26,6 @@ export default function DashboardError({
       <div>
         <Button onClick={reset}>Try again</Button>
       </div>
-    </main>
+    </div>
   );
 }

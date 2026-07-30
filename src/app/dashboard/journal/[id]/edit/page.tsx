@@ -21,7 +21,7 @@ export default async function EditEntryPage({ params }: PageProps) {
   if (!entry) notFound();
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-6 py-8">
+    <div className="mx-auto w-full max-w-2xl px-6 py-8">
       <Link
         href={`/dashboard/journal/${entry.id}`}
         className="text-muted hover:text-ink text-sm underline underline-offset-2"
@@ -34,7 +34,7 @@ export default async function EditEntryPage({ params }: PageProps) {
       <Card className="mt-6">
         <EditEntryForm id={entry.id} tags={tags} values={toSubmission(entry)} />
       </Card>
-    </main>
+    </div>
   );
 }
 

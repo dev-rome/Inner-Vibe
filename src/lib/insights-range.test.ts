@@ -90,11 +90,7 @@ describe("datesInWindow", () => {
 
   it("has no duplicates or gaps across a daylight-saving change", () => {
     const zone = "America/New_York";
-    const window = resolveRange(
-      "week",
-      zone,
-      new Date("2026-11-03T18:00:00Z"),
-    );
+    const window = resolveRange("week", zone, new Date("2026-11-03T18:00:00Z"));
     const dates = datesInWindow(window, zone);
 
     expect(dates).toHaveLength(7);

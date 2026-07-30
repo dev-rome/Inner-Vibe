@@ -19,11 +19,13 @@ type MoodCalendarProps = {
 /**
  * Intensity, never hue.
  *
- * A tile is one colour, sage, at a strength set by the day's average. A
- * green-to-red scale would have the app grading feelings, and a low mood is not
- * a failure to be coloured like one. The floor of 0.12 keeps a logged day
- * visible: "logged, and felt low" must not look identical to "did not log", or
- * the grid quietly erases hard days.
+ * A tile is one colour at a strength set by the day's average. A green-to-red
+ * scale would have the app grading feelings, and a low mood is not a failure to
+ * be coloured like one. One hue cannot pass that judgement however dark it
+ * goes: it can only say "more" or "less".
+ *
+ * The floor of 0.12 keeps a logged day visible. "Logged, and felt low" must not
+ * look identical to "did not log", or the grid quietly erases hard days.
  *
  * Strength alone would be signalling by colour, so every tile also carries the
  * emoji and an accessible name that says the mood in words.
@@ -50,7 +52,13 @@ export function MoodCalendar({
   const lead = dates.length > 0 ? (asUtc(dates[0]).getUTCDay() + 6) % 7 : 0;
 
   return (
-    <div>
+    /*
+     * Capped, not fluid. The tiles are aspect-square, so a full-width grid on a
+     * wide card makes each day an 85px block and the month reads as a wall
+     * rather than as a texture. Around 40px is where the pattern becomes
+     * something you take in at a glance.
+     */
+    <div className="w-full max-w-80">
       <div
         className="text-subtle grid grid-cols-7 gap-1.5 text-center text-xs"
         aria-hidden="true"
@@ -74,6 +82,27 @@ export function MoodCalendar({
           </li>
         ))}
       </ol>
+
+      {/* Intensity is meaningless without its ends named. aria-hidden because
+          every tile already says its mood in words. */}
+      <div
+        aria-hidden="true"
+        className="text-subtle mt-3 flex items-center justify-end gap-1.5 text-xs"
+      >
+        lower
+        {[0.14, 0.34, 0.55, 0.78].map((step) => (
+          <span
+            key={step}
+            className="border-line size-3 rounded-sm border"
+            style={{
+              backgroundColor: `color-mix(in srgb, var(--color-accent) ${Math.round(
+                step * 100,
+              )}%, var(--color-surface-raised))`,
+            }}
+          />
+        ))}
+        higher
+      </div>
     </div>
   );
 }
@@ -129,8 +158,8 @@ function DayTile({
       style={{
         ...style,
         // Single hue at varying strength. color-mix keeps this tied to the one
-        // chart token rather than six hard-coded tints that could drift.
-        backgroundColor: `color-mix(in srgb, var(--color-chart) ${Math.round(
+        // token rather than six hard-coded tints that could drift.
+        backgroundColor: `color-mix(in srgb, var(--color-accent) ${Math.round(
           intensity(day.average) * 100,
         )}%, var(--color-surface-raised))`,
       }}

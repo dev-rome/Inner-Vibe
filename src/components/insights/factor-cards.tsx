@@ -40,19 +40,30 @@ export function FactorCards({
   });
 
   return (
-    <ul className="grid gap-4 sm:grid-cols-2">
-      <FactorCard
-        title="Moving your body"
-        caption="Average mood on days you recorded exercise."
-        rows={exerciseRows}
-        delayMs={baseDelayMs}
-      />
-      <FactorCard
-        title="Sleep"
-        caption="Average mood by how long you slept."
-        rows={sleepRows}
-        delayMs={baseDelayMs + STAGGER_MS}
-      />
-    </ul>
+    /*
+     * A container query, not a viewport one.
+     *
+     * These sit in a narrow column on a wide desktop, where `sm:grid-cols-2`
+     * would still fire — the viewport is wide even though the column is not —
+     * and squeeze both cards into a third of the page. Asking the column how
+     * much room it has is the only thing that answers the actual question, and
+     * it keeps the arrangement the parent's business without a layout prop.
+     */
+    <div className="@container">
+      <ul className="grid gap-4 @lg:grid-cols-2">
+        <FactorCard
+          title="Moving your body"
+          caption="Average mood on days you recorded exercise."
+          rows={exerciseRows}
+          delayMs={baseDelayMs}
+        />
+        <FactorCard
+          title="Sleep"
+          caption="Average mood by how long you slept."
+          rows={sleepRows}
+          delayMs={baseDelayMs + STAGGER_MS}
+        />
+      </ul>
+    </div>
   );
 }

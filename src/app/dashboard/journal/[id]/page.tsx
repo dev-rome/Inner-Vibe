@@ -33,7 +33,7 @@ export default async function EntryDetailPage({ params }: PageProps) {
   }).format(entry.loggedAt);
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-6 py-8">
+    <div className="mx-auto w-full max-w-2xl px-6 py-8">
       <Link
         href="/dashboard/journal"
         className="text-muted hover:text-ink text-sm underline underline-offset-2"
@@ -118,6 +118,6 @@ export default async function EntryDetailPage({ params }: PageProps) {
         </Link>
         <DeleteEntryButton id={entry.id} />
       </div>
-    </main>
+    </div>
   );
 }

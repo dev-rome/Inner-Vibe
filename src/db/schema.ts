@@ -27,6 +27,13 @@ export const profiles = pgTable("profiles", {
   userId: uuid("user_id").primaryKey(),
   // IANA name. The longest in the current database is 30 characters.
   timeZone: varchar("time_zone", { length: 64 }).notNull().default("UTC"),
+  /*
+   * What the app calls you, not an identity. Nullable and never derived from
+   * the email, because a greeting that guesses wrong is worse than one that
+   * simply says "Good evening", and nobody agreed to be called by the front
+   * half of their email address.
+   */
+  displayName: varchar("display_name", { length: 50 }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

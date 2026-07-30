@@ -1,16 +1,10 @@
 import { Card } from "@/components/ui/card";
 import { moodForRating } from "@/lib/moods";
 import { MAX_RATING } from "@/lib/validation/entry";
-
-/**
- * Below this, a card reports what it has instead of drawing a comparison.
- *
- * A mean over one or two entries is noise, and presenting it next to another
- * mean invites reading a cause into it. This app records how someone felt and
- * shows them their own data; it does not tell them what it means. The floor is
- * the difference between "here is your data" and a claim.
- */
-export const MIN_SAMPLE = 3;
+// One floor, in one place. The card and the insight card have to refuse on the
+// same evidence, or the page contradicts itself: a comparison the bars decline
+// to draw must not turn up as a sentence beside them.
+import { MIN_SAMPLE } from "@/lib/insights-copy";
 
 export type FactorRow = {
   key: string;

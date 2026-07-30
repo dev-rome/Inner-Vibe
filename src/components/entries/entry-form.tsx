@@ -28,6 +28,15 @@ type EntryFormProps = {
   heading?: string;
   /** Logging clears the form after saving; editing keeps the values. */
   clearOnSuccess?: boolean;
+  /**
+   * Show only the mood scale until one is picked.
+   *
+   * The dashboard leads with this card, and a full form there makes the page
+   * read as data entry rather than as a dashboard. Nothing is submitted early:
+   * the fields are hidden, not skipped, so a collapsed form and an expanded one
+   * post exactly the same thing.
+   */
+  collapsible?: boolean;
 };
 
 export function EntryForm({
@@ -38,6 +47,7 @@ export function EntryForm({
   pendingLabel = "Saving…",
   heading = "Log a mood entry",
   clearOnSuccess = true,
+  collapsible = false,
 }: EntryFormProps) {
   // No `pending` here: the Save button reads it from useFormStatus instead, so
   // only the button re-renders while the action is in flight.
@@ -57,6 +67,15 @@ export function EntryForm({
   const [formKey, setFormKey] = useState(0);
   const [handledSaveAt, setHandledSaveAt] = useState<number | null>(null);
 
+  /*
+   * Open once a mood is chosen, and stay open. A rejected submit must not fold
+   * the card back up over the note the reader just typed, so this is deliberately
+   * not derived from the current rating.
+   */
+  const [expanded, setExpanded] = useState(
+    !collapsible || Boolean(state.values.rating),
+  );
+
   if (
     clearOnSuccess &&
     state.savedAt !== null &&
@@ -64,6 +83,8 @@ export function EntryForm({
   ) {
     setHandledSaveAt(state.savedAt);
     setFormKey(formKey + 1);
+    // A cleared form has no mood, so the card returns to its resting size.
+    if (collapsible) setExpanded(false);
   }
 
   return (
@@ -83,52 +104,78 @@ export function EntryForm({
         {state.message}
       </p>
 
-      <form key={formKey} action={formAction} className="flex flex-col gap-8">
-        <MoodSelector
-          defaultValue={state.values.rating}
-          name="rating"
-          errorId="rating-error"
-          hasError={Boolean(state.fieldErrors.rating)}
-        />
+      <form
+        key={formKey}
+        action={formAction}
+        className={`flex flex-col ${expanded ? "gap-8" : "gap-4"}`}
+      >
+        {/*
+         * The change event from the radios bubbles, so the card can open
+         * without MoodSelector needing to know it is inside a collapsible one.
+         */}
+        <div onChange={collapsible ? () => setExpanded(true) : undefined}>
+          <MoodSelector
+            defaultValue={state.values.rating}
+            name="rating"
+            errorId="rating-error"
+            hasError={Boolean(state.fieldErrors.rating)}
+          />
+        </div>
         <FieldError id="rating-error" messages={state.fieldErrors.rating} />
 
-        <NoteField
-          error={state.fieldErrors.note}
-          defaultValue={state.values.note}
-        />
+        {collapsible && !expanded && (
+          <p className="text-subtle text-sm">
+            Pick a face to add a note, sleep and tags.
+          </p>
+        )}
 
-        <fieldset>
-          <legend className="text-ink text-base font-medium">
-            Anything that might have played a part?
-          </legend>
-          <p className="text-muted mt-1 text-sm">Optional.</p>
+        {/*
+         * Unmounted rather than hidden. A hidden-but-present note field would
+         * still post whatever a previous expansion left in it, and a collapsed
+         * card has to submit exactly what it shows.
+         */}
+        {expanded && (
+          <>
+            <NoteField
+              error={state.fieldErrors.note}
+              defaultValue={state.values.note}
+            />
 
-          <div className="mt-3 flex flex-wrap items-end gap-6">
-            <div>
-              <label htmlFor="sleepHours" className="text-muted block text-sm">
-                Hours slept
-              </label>
-              <Input
-                id="sleepHours"
-                name="sleepHours"
-                type="number"
-                inputMode="decimal"
-                step="0.5"
-                min="0"
-                max={MAX_SLEEP_HOURS}
-                placeholder="7.5"
-                defaultValue={state.values.sleepHours}
-                aria-describedby={
-                  state.fieldErrors.sleepHours ? "sleep-error" : undefined
-                }
-                aria-invalid={
-                  Boolean(state.fieldErrors.sleepHours) || undefined
-                }
-                className="mt-1.5 w-28 font-mono tabular-nums"
-              />
-            </div>
+            <fieldset>
+              <legend className="text-ink text-base font-medium">
+                Anything that might have played a part?
+              </legend>
+              <p className="text-muted mt-1 text-sm">Optional.</p>
 
-            {/*
+              <div className="mt-3 flex flex-wrap items-end gap-6">
+                <div>
+                  <label
+                    htmlFor="sleepHours"
+                    className="text-muted block text-sm"
+                  >
+                    Hours slept
+                  </label>
+                  <Input
+                    id="sleepHours"
+                    name="sleepHours"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.5"
+                    min="0"
+                    max={MAX_SLEEP_HOURS}
+                    placeholder="7.5"
+                    defaultValue={state.values.sleepHours}
+                    aria-describedby={
+                      state.fieldErrors.sleepHours ? "sleep-error" : undefined
+                    }
+                    aria-invalid={
+                      Boolean(state.fieldErrors.sleepHours) || undefined
+                    }
+                    className="mt-1.5 w-28 font-mono tabular-nums"
+                  />
+                </div>
+
+                {/*
               Radios rather than a checkbox: unanswered has to stay null, and a
               checkbox would record every skipped question as "no".
 
@@ -140,61 +187,67 @@ export function EntryForm({
 
               Neutral selected state; this is not on the coral allowlist.
             */}
-            <fieldset>
-              <legend className="text-muted text-sm">Exercised?</legend>
-              <div className="mt-1.5 flex gap-2">
-                {[
-                  { value: "", label: "Not recorded" },
-                  { value: "yes", label: "Yes" },
-                  { value: "no", label: "No" },
-                ].map((choice) => (
-                  <label
-                    key={choice.value || "unrecorded"}
-                    className="cursor-pointer"
-                  >
-                    <input
-                      type="radio"
-                      name="exercised"
-                      value={choice.value}
-                      defaultChecked={state.values.exercised === choice.value}
-                      className="peer sr-only"
-                    />
-                    <span
-                      className={[
-                        "ease-standard inline-flex rounded-md border px-4 py-2 text-sm transition-colors duration-150",
-                        "border-line bg-surface-raised text-ink hover:border-line-strong",
-                        "peer-checked:border-line-strong peer-checked:bg-surface-sunken peer-checked:font-medium",
-                        "peer-checked:before:mr-1.5 peer-checked:before:content-['✓']",
-                        "peer-focus-visible:outline-focus peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2",
-                      ].join(" ")}
-                    >
-                      {choice.label}
-                    </span>
-                  </label>
-                ))}
+                <fieldset>
+                  <legend className="text-muted text-sm">Exercised?</legend>
+                  <div className="mt-1.5 flex gap-2">
+                    {[
+                      { value: "", label: "Not recorded" },
+                      { value: "yes", label: "Yes" },
+                      { value: "no", label: "No" },
+                    ].map((choice) => (
+                      <label
+                        key={choice.value || "unrecorded"}
+                        className="cursor-pointer"
+                      >
+                        <input
+                          type="radio"
+                          name="exercised"
+                          value={choice.value}
+                          defaultChecked={
+                            state.values.exercised === choice.value
+                          }
+                          className="peer sr-only"
+                        />
+                        <span
+                          className={[
+                            "ease-standard inline-flex rounded-md border px-4 py-2 text-sm transition-colors duration-150",
+                            "border-line bg-surface-raised text-ink hover:border-line-strong",
+                            "peer-checked:border-line-strong peer-checked:bg-surface-sunken peer-checked:font-medium",
+                            "peer-checked:before:mr-1.5 peer-checked:before:content-['✓']",
+                            "peer-focus-visible:outline-focus peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2",
+                          ].join(" ")}
+                        >
+                          {choice.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
               </div>
+
+              <FieldError
+                id="sleep-error"
+                messages={state.fieldErrors.sleepHours}
+              />
             </fieldset>
-          </div>
 
-          <FieldError
-            id="sleep-error"
-            messages={state.fieldErrors.sleepHours}
-          />
-        </fieldset>
+            <TagPicker
+              tags={tags}
+              selectedIds={state.values.tagIds}
+              pendingNames={state.values.newTagNames}
+            />
+            <FieldError
+              id="new-tag-error"
+              messages={state.fieldErrors.newTagNames}
+            />
 
-        <TagPicker
-          tags={tags}
-          selectedIds={state.values.tagIds}
-          pendingNames={state.values.newTagNames}
-        />
-        <FieldError
-          id="new-tag-error"
-          messages={state.fieldErrors.newTagNames}
-        />
-
-        <div>
-          <SubmitButton pendingLabel={pendingLabel}>{submitLabel}</SubmitButton>
-        </div>
+            <div>
+              <SubmitButton pendingLabel={pendingLabel}>
+                {submitLabel}
+              </SubmitButton>
+            </div>
+          </>
+        )}
       </form>
     </section>
   );

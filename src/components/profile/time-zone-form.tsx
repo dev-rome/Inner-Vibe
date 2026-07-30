@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { saveTimeZoneAction } from "@/app/dashboard/settings/actions";
-import { initialSettingsFormState } from "@/app/dashboard/settings/form-state";
+import { saveTimeZoneAction } from "@/app/dashboard/profile/actions";
+import { initialSettingsFormState } from "@/app/dashboard/profile/form-state";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Button } from "@/components/ui/button";
 import { fieldClasses } from "@/components/ui/input";

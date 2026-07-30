@@ -4,6 +4,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  ReferenceDot,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -20,7 +21,7 @@ type MoodTrendProps = {
   range: Range;
 };
 
-type ChartPoint = TrendPoint & { label: string };
+type ChartPoint = TrendPoint & { label: string; tick: string };
 
 /**
  * The bucket is already a calendar date resolved in the reader's zone by
@@ -35,6 +36,12 @@ function formatLabel(date: string): string {
   }).format(new Date(`${date}T00:00:00Z`));
 }
 
+/** Axis ticks carry the day alone; the full date lives in the tooltip. */
+function formatTick(date: string, weekly: boolean): string {
+  if (weekly) return formatLabel(date);
+  return String(new Date(`${date}T00:00:00Z`).getUTCDate()).padStart(2, "0");
+}
+
 export function MoodTrend({ points, range }: MoodTrendProps) {
   const reduced = useReducedMotion();
 
@@ -46,12 +53,16 @@ export function MoodTrend({ points, range }: MoodTrendProps) {
     );
   }
 
+  const weekly = range === "year";
+
   const data: ChartPoint[] = points.map((point) => ({
     ...point,
     label: formatLabel(point.date),
+    tick: formatTick(point.date, weekly),
   }));
 
-  const weekly = range === "year";
+  // Postgres orders the buckets, so the last one is the most recent.
+  const latest = data[data.length - 1];
 
   return (
     <div className="h-64 w-full">
@@ -120,11 +131,11 @@ export function MoodTrend({ points, range }: MoodTrendProps) {
           />
 
           <XAxis
-            dataKey="label"
+            dataKey="tick"
             tickLine={false}
             axisLine={false}
             tick={{ fill: "var(--color-subtle)", fontSize: 12 }}
-            minTickGap={24}
+            minTickGap={16}
           />
           <YAxis
             domain={[MIN_RATING, MAX_RATING]}
@@ -158,6 +169,24 @@ export function MoodTrend({ points, range }: MoodTrendProps) {
             animationDuration={800}
             animationEasing="ease-out"
           />
+
+          {/*
+           * One coral dot, on the most recent point only.
+           *
+           * A ReferenceDot rather than a conditional `dot` renderer: the latest
+           * reading is a fixed landmark, not a per-point decoration, and this
+           * says so without a callback that runs for every point to draw
+           * nothing. Coral is doing what it always does here — marking the one
+           * thing that matters most, which is where you are now.
+           */}
+          <ReferenceDot
+            x={latest.tick}
+            y={latest.average}
+            r={4}
+            fill="var(--color-accent)"
+            stroke="var(--color-surface-raised)"
+            strokeWidth={2}
+          />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -171,7 +200,13 @@ type TooltipProps = {
   weekly?: boolean;
 };
 
-/** A small card rather than Recharts' default box, so it belongs to the app. */
+/**
+ * A dark callout rather than Recharts' default box.
+ *
+ * Dark because it floats over a pale card and has to read as one object rather
+ * than as more card. This is the only inverted surface in the app, which is
+ * what makes it legible as a temporary overlay.
+ */
 function TrendTooltip({ active, payload, weekly }: TooltipProps) {
   if (!active || !payload?.length) return null;
 
@@ -179,24 +214,25 @@ function TrendTooltip({ active, payload, weekly }: TooltipProps) {
   const mood = moodForRating(Math.round(point.average));
 
   return (
-    <div className="border-line bg-surface-raised rounded-md border px-3 py-2 shadow-md">
-      <p className="text-subtle font-mono text-xs tabular-nums">
-        {weekly ? `Week of ${point.label}` : point.label}
-      </p>
-      <p className="text-ink mt-1 flex items-center gap-1.5 text-sm">
+    <div className="bg-ink max-w-56 rounded-md px-3 py-2 shadow-md">
+      <p className="text-surface flex items-center gap-1.5 text-sm">
         <span aria-hidden="true">{mood?.emoji}</span>
         <span className="font-mono tabular-nums">
+          {weekly ? `Week of ${point.label}` : point.label}
+        </span>
+      </p>
+      <p className="text-line-strong mt-1 text-xs">
+        {mood?.label ?? "Logged"} ·{" "}
+        <span className="font-mono tabular-nums">
           {point.average.toFixed(1)}
-        </span>
-        <span className="text-subtle">
-          {point.count === 1 ? "1 entry" : `${point.count} entries`}
-        </span>
+        </span>{" "}
+        · {point.count === 1 ? "1 entry" : `${point.count} entries`}
       </p>
       {/* Only present when the bucket is a single entry, so the note always
           belongs to the point being hovered. */}
       {point.note && (
-        <p className="text-muted mt-1.5 line-clamp-3 max-w-52 text-sm">
-          {point.note}
+        <p className="text-line-strong mt-1.5 line-clamp-3 text-xs italic">
+          &ldquo;{point.note}&rdquo;
         </p>
       )}
     </div>

@@ -7,6 +7,7 @@ import { parseJournalParams } from "@/lib/validation/journal";
 import { EntryFilters } from "@/components/entries/entry-filters";
 import { EntryList } from "@/components/entries/entry-list";
 import { EntryListSkeleton } from "@/components/entries/entry-skeleton";
+import { PageHeader } from "@/components/shell/page-header";
 import { buttonClasses } from "@/components/ui/button";
 
 type PageProps = {
@@ -17,16 +18,11 @@ export default async function JournalPage({ searchParams }: PageProps) {
   const filters = parseJournalParams(await searchParams);
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-6 py-8">
-      <header className="flex items-baseline justify-between gap-4">
-        <h1 className="text-2xl">Journal</h1>
-        <Link
-          href="/dashboard"
-          className="text-muted hover:text-ink text-sm underline underline-offset-2"
-        >
-          Back to log
-        </Link>
-      </header>
+    <div className="mx-auto w-full max-w-2xl px-6 py-8 lg:px-8">
+      <PageHeader
+        title="Journal"
+        description="Everything you have logged, newest first."
+      />
 
       <div className="mt-8">
         <Suspense fallback={<FiltersFallback />}>
@@ -47,7 +43,7 @@ export default async function JournalPage({ searchParams }: PageProps) {
           <Results filters={filters} />
         </Suspense>
       </div>
-    </main>
+    </div>
   );
 }
 
