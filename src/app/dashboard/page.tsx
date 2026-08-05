@@ -53,24 +53,29 @@ const WITHIN_BAND = "gap-4";
 const BETWEEN_BANDS = "gap-8";
 
 /*
- * The order the page acknowledges a new entry in, top to bottom.
+ * The order the page arrives in, top to bottom, and the order it acknowledges
+ * a new entry in afterwards.
  *
- * Roughly 160ms apart, which is slow enough to follow with your eye and read as
- * a sequence. Tighter than this and four sections arriving at once just looks
- * like a stutter. The last one starts as the ring around your chosen face is
- * finishing, so the page picks up where the check-in left off.
+ * Every band is on the same scale. Previously only the lower half animated, so
+ * a first visit had the greeting and the check-in simply appear while the
+ * chart and calendar rose in beneath them — which reads as something failing
+ * rather than as a page assembling.
  *
- * The reduced-motion rule zeroes every delay, collapsing the whole cascade to
- * everything simply being there.
+ * Around 100ms apart: slow enough to follow with the eye, tight enough that
+ * seven sections still feel like one arrival. The reduced-motion rule zeroes
+ * every delay, collapsing the whole thing to everything simply being there.
  */
 const CASCADE = {
-  trend: 120,
-  factors: 280,
-  calendar: 440,
-  lately: 600,
+  header: 0,
+  checkIn: 80,
+  insight: 170,
+  trend: 270,
+  factors: 370,
+  lately: 470,
+  calendar: 570,
 } as const;
 
-/** Wraps a section so it re-announces itself when it remounts after a save. */
+/** Rises into place as the page arrives. */
 function Settle({
   delayMs,
   children,
@@ -80,6 +85,30 @@ function Settle({
 }) {
   return (
     <div className="reveal-rise" style={{ animationDelay: `${delayMs}ms` }}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Fades content in when it is replaced, without moving it.
+ *
+ * Used inside cards that rise on arrival: if this rose too, the content would
+ * travel twice as far as its own card on a first visit. After a save the card
+ * stays put and only what is inside it changes, so a fade is the whole story.
+ */
+function Refresh({
+  delayMs,
+  children,
+}: {
+  delayMs: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="animate-[fade-in_620ms_var(--ease-out)_both]"
+      style={{ animationDelay: `${delayMs}ms` }}
+    >
       {children}
     </div>
   );
@@ -124,11 +153,15 @@ export default async function Dashboard({ searchParams }: PageProps) {
       className={`mx-auto flex w-full max-w-6xl flex-col px-5 py-8 sm:px-6 lg:px-10 ${BETWEEN_BANDS}`}
     >
       {/* Band 1 */}
-      <PageHeader
-        title={<GreetingTitle displayName={displayName} timeZone={timeZone} />}
-        description={contextLine(summary)}
-        actions={<HeaderPill>{today}</HeaderPill>}
-      />
+      <Settle delayMs={CASCADE.header}>
+        <PageHeader
+          title={
+            <GreetingTitle displayName={displayName} timeZone={timeZone} />
+          }
+          description={contextLine(summary)}
+          actions={<HeaderPill>{today}</HeaderPill>}
+        />
+      </Settle>
 
       {/* Band 2: the check-in leads, the observation sits beside it. */}
       <div
@@ -139,6 +172,7 @@ export default async function Dashboard({ searchParams }: PageProps) {
           eyebrow="Check in"
           title="How are you, right now?"
           tone="hero"
+          delayMs={CASCADE.checkIn}
           className="lg:col-span-2"
         >
           {/* The tags query is the only thing this waits on, but it is the
@@ -149,9 +183,11 @@ export default async function Dashboard({ searchParams }: PageProps) {
           </Suspense>
         </DashboardCard>
 
-        <Suspense fallback={<InsightSkeleton />}>
-          <Insight range={range} timeZone={timeZone} />
-        </Suspense>
+        <Settle delayMs={CASCADE.insight}>
+          <Suspense fallback={<InsightSkeleton />}>
+            <Insight range={range} timeZone={timeZone} />
+          </Suspense>
+        </Settle>
       </div>
 
       {/* Band 3: the chart anchors, the factors read alongside it. */}
@@ -164,20 +200,32 @@ export default async function Dashboard({ searchParams }: PageProps) {
           </h2>
         }
       >
-        <div
-          className={`grid grid-cols-1 items-start lg:grid-cols-3 ${WITHIN_BAND}`}
-        >
+        {/*
+         * Stacked, not side by side.
+         *
+         * As a two-column row the factor cards stacked to roughly six hundred
+         * pixels while the chart beside them came to under four, and a grid row
+         * is as tall as its tallest child — so a couple of hundred pixels of
+         * nothing sat under the chart before the next band could begin. Letting
+         * the chart have the full width fixes the void at its cause, and the
+         * factor cards already lay themselves out two across.
+         */}
+        <div className={`flex flex-col ${WITHIN_BAND}`}>
           <DashboardCard
             eyebrow={range === "year" ? "Weekly average" : "Daily average"}
             title="How you have been"
-            className="lg:col-span-2"
+            delayMs={CASCADE.trend}
           >
             <Suspense fallback={<TrendSkeleton />}>
               <Trend key={savedKey} range={range} timeZone={timeZone} />
             </Suspense>
           </DashboardCard>
 
-          <section aria-label="What went with it">
+          <section
+            aria-label="What went with it"
+            className="reveal-rise"
+            style={{ animationDelay: `${CASCADE.factors}ms` }}
+          >
             <Suspense fallback={<FactorCardsSkeleton />}>
               <Factors key={savedKey} range={range} timeZone={timeZone} />
             </Suspense>
@@ -189,21 +237,12 @@ export default async function Dashboard({ searchParams }: PageProps) {
       <div
         className={`grid grid-cols-1 items-start lg:grid-cols-3 ${WITHIN_BAND}`}
       >
-        {/* The calendar is a fixed-width texture, so it takes the narrow
-            column. Entries are text and need the room. */}
-        <DashboardCard
-          eyebrow="This month"
-          title="Day by day"
-          description="Choose a day to open it."
-        >
-          <Suspense fallback={<CalendarSkeleton />}>
-            <Calendar key={savedKey} timeZone={timeZone} />
-          </Suspense>
-        </DashboardCard>
-
+        {/* Entries are text and take the wide column; the calendar is a
+            fixed-width texture and would only leave whitespace in one. */}
         <DashboardCard
           eyebrow="Lately"
           title="Last few entries"
+          delayMs={CASCADE.lately}
           className="lg:col-span-2"
           action={
             <Link
@@ -216,6 +255,17 @@ export default async function Dashboard({ searchParams }: PageProps) {
         >
           <Suspense fallback={<EntryListSkeleton count={RECENT_COUNT} />}>
             <Lately key={savedKey} timeZone={timeZone} />
+          </Suspense>
+        </DashboardCard>
+
+        <DashboardCard
+          eyebrow="This month"
+          title="Day by day"
+          description="Choose a day to open it."
+          delayMs={CASCADE.calendar}
+        >
+          <Suspense fallback={<CalendarSkeleton />}>
+            <Calendar key={savedKey} timeZone={timeZone} />
           </Suspense>
         </DashboardCard>
       </div>
@@ -250,9 +300,9 @@ async function Trend({ range, timeZone }: { range: Range; timeZone: string }) {
   const points = await getMoodOverTime(range, window, timeZone);
 
   return (
-    <Settle delayMs={CASCADE.trend}>
+    <Refresh delayMs={CASCADE.trend}>
       <MoodTrend points={points} range={range} />
-    </Settle>
+    </Refresh>
   );
 }
 
@@ -272,9 +322,9 @@ async function Factors({
   ]);
 
   return (
-    <Settle delayMs={CASCADE.factors}>
+    <Refresh delayMs={CASCADE.factors}>
       <FactorCards exercise={exercise} sleep={sleep} />
-    </Settle>
+    </Refresh>
   );
 }
 
@@ -289,9 +339,9 @@ async function Calendar({ timeZone }: { timeZone: string }) {
   const dates = datesInWindow(month, timeZone).slice(-CALENDAR_MAX_DAYS);
 
   return (
-    <Settle delayMs={CASCADE.calendar}>
+    <Refresh delayMs={CASCADE.calendar}>
       <MoodCalendar days={days} dates={dates} />
-    </Settle>
+    </Refresh>
   );
 }
 
@@ -299,7 +349,7 @@ async function Lately({ timeZone }: { timeZone: string }) {
   const entries = await getEntries(RECENT_COUNT);
 
   return (
-    <Settle delayMs={CASCADE.lately}>
+    <Refresh delayMs={CASCADE.lately}>
       <EntryList
         entries={entries}
         timeZone={timeZone}
@@ -316,6 +366,6 @@ async function Lately({ timeZone }: { timeZone: string }) {
           </>
         }
       />
-    </Settle>
+    </Refresh>
   );
 }

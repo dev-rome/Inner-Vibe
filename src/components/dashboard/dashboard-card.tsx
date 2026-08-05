@@ -20,6 +20,13 @@ type DashboardCardProps = {
   className?: string;
   /** Anchor target, so the nav's "Log a moment" can scroll to this card. */
   id?: string;
+  /**
+   * Where this card sits in the page's arrival.
+   *
+   * Set here rather than on a wrapper because the card is a grid item: a div
+   * around it would take the column span and leave the card at one column.
+   */
+  delayMs?: number;
   children: ReactNode;
 };
 
@@ -31,6 +38,7 @@ export function DashboardCard({
   tone = "default",
   className = "",
   id,
+  delayMs,
   children,
 }: DashboardCardProps) {
   const headingId = `card-${title.toLowerCase().replace(/[^a-z]+/g, "-")}`;
@@ -41,7 +49,10 @@ export function DashboardCard({
       id={id}
       tone={tone}
       aria-labelledby={headingId}
-      className={`flex scroll-mt-6 flex-col ${className}`}
+      style={
+        delayMs === undefined ? undefined : { animationDelay: `${delayMs}ms` }
+      }
+      className={`flex scroll-mt-6 flex-col ${delayMs === undefined ? "" : "reveal-rise"} ${className}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">

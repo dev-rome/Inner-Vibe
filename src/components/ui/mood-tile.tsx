@@ -5,7 +5,10 @@ const tile = [
   // and colour alone would snap those.
   "ease-out flex aspect-square w-full items-center justify-center rounded-md border text-2xl transition-all duration-state sm:text-3xl",
   "border-line bg-surface-sunken",
-  "peer-hover:border-line-strong",
+  // The interaction people perform every day, so it answers before it is
+  // chosen. Transform and shadow only, both cheap and both removed by the
+  // global reduced-motion rule.
+  "peer-hover:border-line-strong peer-hover:-translate-y-0.5 peer-hover:shadow-md",
   // The daily interaction, so it gets to feel like something. Scale and
   // translate only, both compositor properties, both killed by the global
   // reduced-motion rule.

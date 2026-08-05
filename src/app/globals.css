@@ -152,6 +152,13 @@
   }
 }
 
+/* For content replaced inside a card that has already arrived: no travel. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
 /*
  * Skeleton blocks breathe rather than blink.
  *

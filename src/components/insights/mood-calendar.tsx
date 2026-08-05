@@ -160,7 +160,10 @@ function DayTile({
       href={href}
       aria-label={description}
       title={description}
-      className={`${tileShell} border-line-strong hover:border-ink ease-standard duration-hover transition-colors`}
+      // A day is a link, so it lifts under the cursor rather than only
+      // darkening its border. relative + z so the raised tile sits above its
+      // neighbours instead of being clipped between them.
+      className={`${tileShell} border-line-strong hover:border-ink ease-standard duration-hover relative transition-[transform,border-color,box-shadow] hover:z-10 hover:-translate-y-0.5 hover:shadow-md`}
       style={{
         ...style,
         // Single hue at varying strength. color-mix keeps this tied to the one
