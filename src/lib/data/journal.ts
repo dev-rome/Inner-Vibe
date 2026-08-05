@@ -112,6 +112,50 @@ export async function getJournalPage(
   };
 }
 
+/**
+ * How many entries match, without fetching any of them.
+ *
+ * `head: true` sends no rows back at all — only the count header — so this
+ * costs a count and nothing else. Kept separate from the page query because
+ * keyset pagination deliberately has no total: the page knows whether another
+ * exists, never how many there are.
+ */
+export async function countJournalEntries(
+  filters: JournalFilters,
+  timeZone: string,
+): Promise<number> {
+  await requireUser();
+  const supabase = await createClient();
+
+  const select = filters.tagId ? `id, match:entry_tags!inner(tag_id)` : "id";
+
+  let query = supabase
+    .from("entries")
+    .select(select, { count: "exact", head: true });
+
+  if (filters.tagId) query = query.eq("match.tag_id", filters.tagId);
+  if (filters.mood !== undefined) query = query.eq("rating", filters.mood);
+
+  if (filters.from) {
+    query = query.gte(
+      "logged_at",
+      startOfDay(filters.from, timeZone).toISOString(),
+    );
+  }
+
+  if (filters.to) {
+    query = query.lt("logged_at", endOfDay(filters.to, timeZone).toISOString());
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    failRead("journal count", error);
+  }
+
+  return count ?? 0;
+}
+
 /** A single entry, or null when it does not exist or is not yours. */
 export async function getEntry(id: string): Promise<Entry | null> {
   await requireUser();
